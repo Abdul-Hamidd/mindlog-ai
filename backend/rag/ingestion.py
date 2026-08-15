@@ -1,5 +1,5 @@
 import os
-import fitz  # PyMuPDF
+import pymupdf
 import docx
 import pandas as pd
 
@@ -26,7 +26,7 @@ def load_document(file_path: str) -> str:
 def _load_pdf(file_path: str) -> str:
     """Extract text from PDF using PyMuPDF."""
     text = ""
-    doc = fitz.open(file_path)
+    doc = pymupdf.open(file_path)
     for page_num, page in enumerate(doc):
         page_text = page.get_text()
         if page_text.strip():
