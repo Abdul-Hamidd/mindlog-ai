@@ -12,8 +12,6 @@ python-docx
 pandas
 python-dotenv
 tiktoken
-ragas
-datasets
 langchain-groq
 langchain-huggingface
 supabase

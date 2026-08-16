@@ -15,7 +15,6 @@ from rag.chunking import chunk_text
 from rag.embeddings import embed_and_store, get_collection_count
 from rag.retriever import retrieve_relevant_chunks, clear_cache
 from rag.llm import generate_answer, generate_answer_stream
-from rag.evaluation import evaluate_answer
 from rag.db import (
     create_conversation,
     get_user_conversations,
@@ -50,8 +49,6 @@ class QueryResponse(BaseModel):
     answer: str
     sources: List[str]
     chunks_used: int
-    faithfulness: Optional[float] = None
-    answer_relevancy: Optional[float] = None
 
 
 class UploadResponse(BaseModel):
@@ -160,14 +157,10 @@ async def query_documents(request: QueryRequest):
 
     result = generate_answer(request.query, chunks, history=request.history)
 
-    scores = await evaluate_answer(request.query, result["answer"], chunks)
-
     return QueryResponse(
         answer=result["answer"],
         sources=result["sources"],
-        chunks_used=result.get("chunks_used", len(chunks)),
-        faithfulness=scores["faithfulness"],
-        answer_relevancy=scores["answer_relevancy"]
+        chunks_used=result.get("chunks_used", len(chunks))
     )
 
 
@@ -175,7 +168,6 @@ async def query_documents(request: QueryRequest):
 def query_documents_stream(request: QueryRequest):
     """
     Same as /query but streams the answer token-by-token, with conversation history support.
-    After streaming completes, evaluation scores are appended as a trailing marker.
     """
     if get_collection_count() == 0:
         raise HTTPException(
@@ -190,22 +182,8 @@ def query_documents_stream(request: QueryRequest):
     )
 
     def event_generator():
-        full_answer = ""
         for token in generate_answer_stream(request.query, chunks, history=request.history):
-            if "__SOURCES__" in token:
-                pre, _, _ = token.partition("__SOURCES__")
-                full_answer += pre
-                yield token
-            else:
-                full_answer += token
-                yield token
-
-        try:
-            scores = asyncio.run(evaluate_answer(request.query, full_answer.strip(), chunks))
-        except Exception:
-            scores = {"faithfulness": None, "answer_relevancy": None}
-
-        yield f"\n__SCORES__{_json.dumps(scores)}"
+            yield token
 
     return StreamingResponse(event_generator(), media_type="text/plain")
 
