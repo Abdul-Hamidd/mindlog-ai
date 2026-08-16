@@ -1,52 +1,37 @@
 import chromadb
-from sentence_transformers import SentenceTransformer
+from chromadb.utils import embedding_functions
 from typing import List
-import os
 
-# Initialize embedding model
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 CHROMA_PATH = "chroma_db"
 
-# Load model once
-model = SentenceTransformer(EMBEDDING_MODEL)
+# Lightweight ONNX-based embedding function bundled with ChromaDB itself.
+# Uses the same all-MiniLM-L6-v2 model as before, but without the heavy
+# torch/sentence-transformers dependency — keeps RAM usage low enough
+# for small free-tier hosting containers.
+embedding_fn = embedding_functions.ONNXMiniLM_L6_V2()
 
 
 def get_chroma_client():
-    """Initialize and return ChromaDB client."""
-    client = chromadb.PersistentClient(path=CHROMA_PATH)
-    return client
+    return chromadb.PersistentClient(path=CHROMA_PATH)
 
 
 def get_or_create_collection(client, collection_name: str = "documents"):
-    """Get existing collection or create new one."""
-    collection = client.get_or_create_collection(
+    return client.get_or_create_collection(
         name=collection_name,
+        embedding_function=embedding_fn,
         metadata={"hnsw:space": "cosine"}
     )
-    return collection
 
 
 def embed_and_store(chunks: List[str], file_name: str):
-    """
-    Generate embeddings for chunks and store in ChromaDB.
-    
-    Args:
-        chunks: List of text chunks
-        file_name: Source file name for metadata
-    """
+    """Store chunks in ChromaDB — embeddings generated automatically by the collection."""
     client = get_chroma_client()
     collection = get_or_create_collection(client)
 
-    # Generate embeddings
-    embeddings = model.encode(chunks, show_progress_bar=True).tolist()
-
-    # Create unique IDs for each chunk
     ids = [f"{file_name}_chunk_{i}" for i in range(len(chunks))]
 
-    # Store in ChromaDB with metadata
     collection.upsert(
         ids=ids,
-        embeddings=embeddings,
         documents=chunks,
         metadatas=[{"source": file_name, "chunk_index": i} for i in range(len(chunks))]
     )
@@ -55,7 +40,6 @@ def embed_and_store(chunks: List[str], file_name: str):
 
 
 def get_collection_count():
-    """Return total number of chunks stored in ChromaDB."""
     try:
         client = get_chroma_client()
         collection = get_or_create_collection(client)

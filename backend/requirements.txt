@@ -5,13 +5,10 @@ langchain
 langchain-community
 langchain-text-splitters
 chromadb
-sentence-transformers
 groq
 pymupdf
 python-docx
 pandas
 python-dotenv
 tiktoken
-langchain-groq
-langchain-huggingface
 supabase
