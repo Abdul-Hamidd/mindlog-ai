@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 
-const API_URL = 'http://127.0.0.1:8000'
+const API_URL = 'https://mindlog-ai-71ada.containers.snapdeploy.app'
 
 function getUserId() {
   let userId = localStorage.getItem('mindlog_user_id')
