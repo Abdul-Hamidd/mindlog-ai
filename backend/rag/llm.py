@@ -10,7 +10,7 @@ load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # Model to use
-MODEL = "openai/gpt-oss-120b"
+MODEL = "qwen/qwen3.6-27b"
 
 
 def _build_prompts(query: str, retrieved_chunks: List[Dict], history: Optional[List[Dict]] = None):
