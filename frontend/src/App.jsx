@@ -205,6 +205,11 @@ function App() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Warm up the backend container on app load.
+  useEffect(() => {
+    fetch(API_URL).catch(() => {})
+  }, [])
+
   useEffect(() => {
     refreshConversations()
   }, [])
