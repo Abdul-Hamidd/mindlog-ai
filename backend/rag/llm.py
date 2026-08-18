@@ -10,7 +10,7 @@ load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # Model to use
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "openai/gpt-oss-120b"
 
 
 def _build_prompts(query: str, retrieved_chunks: List[Dict], history: Optional[List[Dict]] = None):
