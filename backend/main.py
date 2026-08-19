@@ -24,7 +24,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Allow all origins for Vercel and local dev
+# 1. CORS Sab se pehle (Crucial for Vercel)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,6 +32,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# 2. Health Check Endpoints (SnapDeploy Shutdown Fix)
+@app.get("/")
+@app.get("/health")
+@app.get("/healthz")
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok", "service": "MindLog API", "healthy": True}
 
 
 class QueryRequest(BaseModel):
@@ -72,15 +81,6 @@ class MessageSave(BaseModel):
     role: str
     content: str
     sources: Optional[List[str]] = None
-
-
-# ─── SNAPDEPLOY HEALTH CHECK ENDPOINTS (FIXES SHUTDOWN ISSUE) ───
-@app.get("/")
-@app.get("/health")
-@app.get("/healthz")
-@app.get("/api/health")
-def health_check():
-    return {"status": "ok", "service": "MindLog API", "healthy": True}
 
 
 @app.post("/upload", response_model=UploadResponse)

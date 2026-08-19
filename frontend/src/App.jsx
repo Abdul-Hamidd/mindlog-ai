@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 
+// Backend API Base URL
 const API_URL = 'https://mindlog-ai-71ada.containers.snapdeploy.app'
 
+// Generate or retrieve persistent user ID
 function getUserId() {
   let userId = localStorage.getItem('mindlog_user_id')
   if (!userId) {
@@ -12,6 +14,7 @@ function getUserId() {
   return userId
 }
 
+// Relative time formatting helper
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
@@ -23,6 +26,7 @@ function timeAgo(dateStr) {
   return `${days}d ago`
 }
 
+// Clean response content by removing metadata markers
 function sanitizeAnswer(text) {
   if (!text) return text
   let cleaned = text
@@ -31,6 +35,7 @@ function sanitizeAnswer(text) {
   return cleaned.trim()
 }
 
+// Mood options configuration
 const MOODS = [
   { label: 'Calm', color: '#6B84A0' },
   { label: 'Content', color: '#5B7A63' },
@@ -42,7 +47,7 @@ const MOODS = [
   { label: 'Sad', color: '#7D8A99' },
 ]
 
-// ─── Icons ────────────────────────────────
+// ─── SVG ICONS ──────────────────────────────────────────────────────────────
 const IconMenu = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
     <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
@@ -93,7 +98,7 @@ const IconMic = (props) => (
   </svg>
 )
 
-// ─── Voice input hook ──────────────────────
+// ─── VOICE INPUT HOOK ───────────────────────────────────────────────────────
 function useVoiceInput(onResult) {
   const [isListening, setIsListening] = useState(false)
   const [isSupported] = useState(
@@ -120,13 +125,8 @@ function useVoiceInput(onResult) {
       onResult(baseTextRef.current + transcript)
     }
 
-    recognition.onerror = () => {
-      setIsListening(false)
-    }
-
-    recognition.onend = () => {
-      setIsListening(false)
-    }
+    recognition.onerror = () => setIsListening(false)
+    recognition.onend = () => setIsListening(false)
 
     recognitionRef.current = recognition
     recognition.start()
@@ -139,11 +139,8 @@ function useVoiceInput(onResult) {
   }
 
   const toggle = (currentText) => {
-    if (isListening) {
-      stop()
-    } else {
-      start(currentText)
-    }
+    if (isListening) stop()
+    else start(currentText)
   }
 
   return { isListening, isSupported, toggle }
@@ -172,6 +169,7 @@ function MicButton({ isListening, isSupported, onClick, className = '' }) {
   )
 }
 
+// ─── MAIN APPLICATION COMPONENT ─────────────────────────────────────────────
 function App() {
   const [userId] = useState(getUserId)
   const [activeTab, setActiveTab] = useState('write')
@@ -201,42 +199,22 @@ function App() {
   const entryVoice = useVoiceInput(setEntryText)
   const questionVoice = useVoiceInput(setInput)
 
+  // Scroll chat to bottom when new messages arrive
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Warmup Ping on App Load targeted to /health
-  useEffect(() => {
-    let attempts = 0
-    const maxAttempts = 10
-    let timeoutId = null
-
-    const tryWakeUp = () => {
-      fetch(`${API_URL}/health`)
-        .then(() => {})
-        .catch(() => {
-          attempts++
-          if (attempts < maxAttempts) {
-            timeoutId = setTimeout(tryWakeUp, 5000)
-          }
-        })
-    }
-
-    tryWakeUp()
-
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId)
-    }
-  }, [])
-
+  // Initial load of conversation list
   useEffect(() => {
     refreshConversations()
   }, [])
 
+  // Persist sidebar state
   useEffect(() => {
     localStorage.setItem('mindlog_sidebar_open', sidebarOpen)
   }, [sidebarOpen])
 
+  // Auto-resize chat textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
@@ -244,6 +222,7 @@ function App() {
     }
   }, [input])
 
+  // Auto-resize entry text area
   useEffect(() => {
     if (entryTextareaRef.current) {
       entryTextareaRef.current.style.height = 'auto'
@@ -251,6 +230,7 @@ function App() {
     }
   }, [entryText])
 
+  // Fetch all user conversations
   const refreshConversations = async () => {
     try {
       const res = await axios.get(`${API_URL}/conversations/${userId}`)
@@ -260,11 +240,13 @@ function App() {
     }
   }
 
-  const startNewReflection = async () => {
+  // Clear current active reflection session
+  const startNewReflection = () => {
     setMessages([])
     setCurrentConversationId(null)
   }
 
+  // Load selected conversation history
   const openConversation = async (conversationId) => {
     setIsLoadingConvo(true)
     setCurrentConversationId(conversationId)
@@ -285,6 +267,7 @@ function App() {
     }
   }
 
+  // Delete a conversation item
   const deleteConversation = async (conversationId, e) => {
     e.stopPropagation()
     try {
@@ -298,6 +281,7 @@ function App() {
     }
   }
 
+  // Ensure conversation exists before sending first query
   const ensureConversation = async (firstMessageText) => {
     if (currentConversationId) return currentConversationId
     const title = firstMessageText.length > 40
@@ -309,6 +293,7 @@ function App() {
     return res.data.id
   }
 
+  // Save chat message to database
   const saveMessageToDb = async (conversationId, role, content, sources) => {
     try {
       await axios.post(`${API_URL}/messages`, {
@@ -322,6 +307,7 @@ function App() {
     }
   }
 
+  // Save new journal entry
   const handleSaveEntry = async () => {
     if (!entryText.trim()) return
     if (entryVoice.isListening) entryVoice.toggle(entryText)
@@ -345,6 +331,7 @@ function App() {
     }
   }
 
+  // Handle streaming query request
   const handleAsk = async () => {
     if (isAskingRef.current) return
     if (!input.trim()) return
@@ -369,13 +356,9 @@ function App() {
       const conversationId = await ensureConversation(question)
       saveMessageToDb(conversationId, 'user', question, []).catch(console.error)
 
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 45000)
-
       const response = await fetch(`${API_URL}/query/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
         body: JSON.stringify({
           query: question,
           n_results: 5,
@@ -384,11 +367,9 @@ function App() {
         })
       })
 
-      clearTimeout(timeoutId)
-
       if (!response.ok) {
         const errData = await response.json().catch(() => null)
-        throw new Error(errData?.detail || `Server status ${response.status}. Please try sending again in a few seconds.`)
+        throw new Error(errData?.detail || `Server error ${response.status}. Please try again.`)
       }
 
       const reader = response.body.getReader()
@@ -430,13 +411,9 @@ function App() {
       console.error('Ask Error:', err)
       setMessages(prev => {
         const updated = [...prev]
-        const errorText = err.name === 'AbortError'
-          ? 'Server cold start timeout. The container is waking up, please click send again!'
-          : `Error: ${err.message}`
-
         updated[updated.length - 1] = {
           role: 'assistant',
-          content: errorText
+          content: err.message || 'Network Error: Unable to connect to backend.'
         }
         return updated
       })
@@ -455,7 +432,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-paper flex font-sans overflow-hidden">
-      {/* Sidebar */}
+      {/* Sidebar Navigation */}
       <div
         className={`bg-ink flex flex-col h-screen sticky top-0 shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${
           sidebarOpen ? 'w-80' : 'w-0'
@@ -524,9 +501,9 @@ function App() {
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Main Workspace */}
       <div className="flex-1 flex flex-col h-screen min-w-0">
-        {/* Top bar */}
+        {/* Header Bar */}
         <div className="flex items-center justify-between gap-3 px-8 py-4 border-b border-paperLine shrink-0 bg-white/40">
           <div className="flex items-center gap-4 min-w-0">
             <button
@@ -568,6 +545,7 @@ function App() {
           </div>
         </div>
 
+        {/* View Body */}
         <div className="flex-1 overflow-y-auto flex flex-col items-center px-6 py-10">
           <div className="w-full max-w-2xl">
             {/* WRITE TAB */}
@@ -584,6 +562,7 @@ function App() {
                   </div>
                 </div>
 
+                {/* Mood Selectors */}
                 <div className="flex flex-wrap gap-2 mb-6 pl-[42px]">
                   {MOODS.map((m) => {
                     const isSelected = selectedMood === m.label
@@ -608,6 +587,7 @@ function App() {
                   })}
                 </div>
 
+                {/* Entry Input Area */}
                 <div className="relative">
                   <textarea
                     ref={entryTextareaRef}
@@ -632,6 +612,7 @@ function App() {
                   </p>
                 )}
 
+                {/* Action Controls */}
                 <div className="flex items-center justify-between mt-4">
                   <div className="text-[12px] text-inkSoft/70 h-5 flex items-center gap-1.5">
                     {saveConfirmation && (
@@ -660,6 +641,7 @@ function App() {
             {/* REFLECT TAB */}
             {activeTab === 'reflect' && (
               <div className="flex flex-col h-[calc(100vh-140px)]">
+                {/* Chat Messages Log */}
                 <div className="flex-1 overflow-y-auto space-y-4 pb-6 pr-2">
                   {messages.map((m, idx) => {
                     const isUser = m.role === 'user'
@@ -696,6 +678,7 @@ function App() {
                   <div ref={chatEndRef} />
                 </div>
 
+                {/* Prompt Query Box */}
                 <div className="bg-white border border-paperLine rounded-2xl p-2.5 flex items-center gap-2 shadow-sm shrink-0">
                   <textarea
                     ref={textareaRef}
