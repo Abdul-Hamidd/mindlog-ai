@@ -205,25 +205,19 @@ function App() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Warm up the backend container on app load.
-  // SnapDeploy's free-tier container returns 503 (without CORS headers)
-  // while it's waking up from sleep, which makes a single ping fail.
-  // Retry every 8s for up to ~100s so the container is awake by the
-  // time the user actually sends a question.
+  // Warmup Ping on App Load targeted to /health
   useEffect(() => {
     let attempts = 0
-    const maxAttempts = 12 // ~100 seconds total (12 x 8s)
+    const maxAttempts = 10
     let timeoutId = null
 
     const tryWakeUp = () => {
-      fetch(API_URL)
-        .then(() => {
-          // Success — container is awake, stop retrying
-        })
+      fetch(`${API_URL}/health`)
+        .then(() => {})
         .catch(() => {
           attempts++
           if (attempts < maxAttempts) {
-            timeoutId = setTimeout(tryWakeUp, 8000)
+            timeoutId = setTimeout(tryWakeUp, 5000)
           }
         })
     }
@@ -364,17 +358,24 @@ function App() {
       .filter(m => m.role === 'user' || m.role === 'assistant')
       .map(m => ({ role: m.role, content: m.content }))
 
-    setMessages(prev => [...prev, { role: 'user', content: question }])
+    setMessages(prev => [
+      ...prev,
+      { role: 'user', content: question },
+      { role: 'assistant', content: '' }
+    ])
     setIsAsking(true)
-    setMessages(prev => [...prev, { role: 'assistant', content: '' }])
-
-    const conversationId = await ensureConversation(question)
-    saveMessageToDb(conversationId, 'user', question, [])
 
     try {
+      const conversationId = await ensureConversation(question)
+      saveMessageToDb(conversationId, 'user', question, []).catch(console.error)
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 45000)
+
       const response = await fetch(`${API_URL}/query/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           query: question,
           n_results: 5,
@@ -383,40 +384,17 @@ function App() {
         })
       })
 
+      clearTimeout(timeoutId)
+
       if (!response.ok) {
         const errData = await response.json().catch(() => null)
-        throw new Error(errData?.detail || `Request failed (${response.status})`)
+        throw new Error(errData?.detail || `Server status ${response.status}. Please try sending again in a few seconds.`)
       }
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let fullText = ''
       let sources = []
-      let displayedLength = 0
-      let typingTimer = null
-
-      const revealText = (rawCleanText) => {
-        const cleanText = sanitizeAnswer(rawCleanText)
-        if (typingTimer) return
-        typingTimer = setInterval(() => {
-          displayedLength = Math.min(displayedLength + 3, cleanText.length)
-          setMessages(prev => {
-            const updated = [...prev]
-            updated[updated.length - 1] = {
-              ...updated[updated.length - 1],
-              role: 'assistant',
-              content: cleanText.slice(0, displayedLength)
-            }
-            return updated
-          })
-          if (displayedLength >= cleanText.length) {
-            clearInterval(typingTimer)
-            typingTimer = null
-          }
-        }, 15)
-      }
-
-      let finalAnswerText = ''
 
       while (true) {
         const { done, value } = await reader.read()
@@ -424,40 +402,42 @@ function App() {
 
         fullText += decoder.decode(value, { stream: true })
 
-        const scoresMarkerIndex = fullText.indexOf('__SCORES__')
-        let textBeforeScores = fullText
-        if (scoresMarkerIndex !== -1) {
-          textBeforeScores = fullText.slice(0, scoresMarkerIndex)
-        }
-
-        const markerIndex = textBeforeScores.indexOf('__SOURCES__')
-        let cleanText = textBeforeScores
+        const markerIndex = fullText.indexOf('__SOURCES__')
+        let cleanText = fullText
         if (markerIndex !== -1) {
-          cleanText = textBeforeScores.slice(0, markerIndex).trimEnd()
+          cleanText = fullText.slice(0, markerIndex).trimEnd()
           try {
-            const meta = JSON.parse(textBeforeScores.slice(markerIndex + '__SOURCES__'.length))
+            const meta = JSON.parse(fullText.slice(markerIndex + '__SOURCES__'.length))
             sources = meta.sources || []
           } catch {}
         }
 
-        finalAnswerText = sanitizeAnswer(cleanText)
-        revealText(cleanText)
+        const sanitized = sanitizeAnswer(cleanText)
+        setMessages(prev => {
+          const updated = [...prev]
+          updated[updated.length - 1] = {
+            role: 'assistant',
+            content: sanitized
+          }
+          return updated
+        })
       }
 
-      await new Promise(resolve => {
-        const check = setInterval(() => {
-          if (!typingTimer) {
-            clearInterval(check)
-            resolve()
-          }
-        }, 50)
-      })
+      const finalSanitized = sanitizeAnswer(fullText.split('__SOURCES__')[0])
+      saveMessageToDb(conversationId, 'assistant', finalSanitized, sources).catch(console.error)
 
-      saveMessageToDb(conversationId, 'assistant', finalAnswerText, sources)
     } catch (err) {
+      console.error('Ask Error:', err)
       setMessages(prev => {
         const updated = [...prev]
-        updated[updated.length - 1] = { role: 'assistant', content: `Something went wrong: ${err.message}` }
+        const errorText = err.name === 'AbortError'
+          ? 'Server cold start timeout. The container is waking up, please click send again!'
+          : `Error: ${err.message}`
+
+        updated[updated.length - 1] = {
+          role: 'assistant',
+          content: errorText
+        }
         return updated
       })
     } finally {
@@ -473,13 +453,8 @@ function App() {
     }
   }
 
-  const hasMessages = !isLoadingConvo && messages.length > 0
-  const lastMsg = messages[messages.length - 1]
-  const showTypingIndicator = isAsking && lastMsg?.role === 'assistant' && lastMsg?.content === ''
-
   return (
     <div className="min-h-screen bg-paper flex font-sans overflow-hidden">
-
       {/* Sidebar */}
       <div
         className={`bg-ink flex flex-col h-screen sticky top-0 shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${
@@ -551,7 +526,6 @@ function App() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col h-screen min-w-0">
-
         {/* Top bar */}
         <div className="flex items-center justify-between gap-3 px-8 py-4 border-b border-paperLine shrink-0 bg-white/40">
           <div className="flex items-center gap-4 min-w-0">
@@ -596,11 +570,9 @@ function App() {
 
         <div className="flex-1 overflow-y-auto flex flex-col items-center px-6 py-10">
           <div className="w-full max-w-2xl">
-
-            {/* ─── WRITE TAB ─── */}
+            {/* WRITE TAB */}
             {activeTab === 'write' && (
               <div className="bg-white/70 border border-paperLine rounded-xl shadow-[0_1px_2px_rgba(35,40,33,0.04)] p-7">
-
                 <div className="flex items-start gap-2.5 mb-6">
                   <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
                     <IconCompass className="w-4 h-4 text-white" />
@@ -682,137 +654,76 @@ function App() {
                     Save entry
                   </button>
                 </div>
-
-                {recentEntries.length > 0 && (
-                  <div className="mt-6 pt-5 border-t border-paperLine">
-                    <p className="text-[12px] text-inkSoft/60 mb-3">Saved this session</p>
-                    <div className="flex flex-wrap gap-2">
-                      {recentEntries.map((e, i) => {
-                        const moodColor = MOODS.find(m => m.label === e.mood)?.color || '#9A9690'
-                        return (
-                          <span
-                            key={i}
-                            className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-full"
-                            style={{ backgroundColor: `${moodColor}14`, color: moodColor }}
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: moodColor }} />
-                            {e.label.replace('Entry — ', '')}
-                          </span>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <p className="text-[11px] text-inkSoft/40 text-center mt-6">
-                  MindLog offers reflection, not therapy — please reach out to a professional if you need support
-                </p>
               </div>
             )}
 
-            {/* ─── REFLECT TAB ─── */}
+            {/* REFLECT TAB */}
             {activeTab === 'reflect' && (
-              <div className="bg-white/70 border border-paperLine rounded-xl shadow-[0_1px_2px_rgba(35,40,33,0.04)] flex flex-col">
-
-                <div className={hasMessages
-                  ? 'max-h-[58vh] overflow-y-auto px-5 pt-6 pb-5 space-y-4'
-                  : 'h-[360px] flex items-center justify-center px-6'
-                }>
-                  {isLoadingConvo && (
-                    <p className="text-xs text-inkSoft">Loading reflection…</p>
-                  )}
-
-                  {!isLoadingConvo && messages.length === 0 && (
-                    <div className="flex flex-col items-center text-center">
-                      <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center mb-5">
-                        <IconCompass className="w-5 h-5 text-white" />
-                      </div>
-                      <p className="text-[13px] text-accent/70 mb-3">Ask me anything about your journal</p>
-                      <p className="font-display text-2xl text-ink mb-2">Ask your journal anything</p>
-                      <p className="text-sm text-inkSoft max-w-sm leading-relaxed">
-                        Try "How have I been feeling this week?" or tap the mic and just ask.
-                      </p>
-                    </div>
-                  )}
-
-                  {hasMessages && messages.map((msg, i) => (
-                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start gap-2.5'}`}>
-                      {msg.role === 'system' ? (
-                        <div className="text-[11px] text-inkSoft italic px-1">{msg.content}</div>
-                      ) : msg.role === 'user' ? (
-                        <div className="max-w-[75%] bg-ink text-paper rounded-2xl rounded-br-md px-4 py-2.5">
-                          <p className="whitespace-pre-wrap leading-relaxed text-sm">{msg.content}</p>
+              <div className="flex flex-col h-[calc(100vh-140px)]">
+                <div className="flex-1 overflow-y-auto space-y-4 pb-6 pr-2">
+                  {messages.map((m, idx) => {
+                    const isUser = m.role === 'user'
+                    return (
+                      <div
+                        key={idx}
+                        className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
+                      >
+                        {!isUser && (
+                          <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center shrink-0 mt-1">
+                            <IconCompass className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
+                        <div
+                          className={`max-w-[80%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed ${
+                            isUser
+                              ? 'bg-ink text-paper rounded-tr-sm'
+                              : 'bg-white border border-paperLine text-ink rounded-tl-sm'
+                          }`}
+                        >
+                          {m.content === '' && !isUser ? (
+                            <div className="flex items-center gap-1 py-1 px-2">
+                              <span className="w-1.5 h-1.5 bg-inkSoft/40 rounded-full animate-bounce" />
+                              <span className="w-1.5 h-1.5 bg-inkSoft/40 rounded-full animate-bounce [animation-delay:0.2s]" />
+                              <span className="w-1.5 h-1.5 bg-inkSoft/40 rounded-full animate-bounce [animation-delay:0.4s]" />
+                            </div>
+                          ) : (
+                            <p className="whitespace-pre-wrap">{m.content}</p>
+                          )}
                         </div>
-                      ) : (
-                        msg.content !== '' && (
-                          <>
-                            <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center shrink-0 mt-0.5">
-                              <IconCompass className="w-3.5 h-3.5 text-white" />
-                            </div>
-                            <div className="max-w-[75%] bg-accent/10 border border-accent/15 rounded-2xl rounded-bl-md px-4 py-3">
-                              <p className="whitespace-pre-wrap leading-relaxed text-[15px] text-ink">
-                                {msg.content}
-                              </p>
-                            </div>
-                          </>
-                        )
-                      )}
-                    </div>
-                  ))}
-
-                  {showTypingIndicator && (
-                    <div className="flex justify-start gap-2.5">
-                      <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center shrink-0">
-                        <IconCompass className="w-3.5 h-3.5 text-white" />
                       </div>
-                      <div className="flex items-center gap-1.5 bg-accent/10 border border-accent/15 rounded-2xl rounded-bl-md px-4 py-3">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse [animation-delay:150ms]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse [animation-delay:300ms]" />
-                      </div>
-                    </div>
-                  )}
+                    )
+                  })}
                   <div ref={chatEndRef} />
                 </div>
 
-                <div className="border-t border-paperLine p-4 bg-paper/40 rounded-b-xl">
-                  <div className="flex items-end gap-1 bg-white border border-paperLine rounded-2xl px-2 py-2 shadow-sm focus-within:border-accent/60 focus-within:ring-2 focus-within:ring-accent/15 transition-shadow">
-                    <textarea
-                      ref={textareaRef}
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Ask a question about your journal…"
-                      rows={1}
-                      className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-ink placeholder:text-inkSoft/50 focus:outline-none max-h-[160px] leading-relaxed"
-                    />
-                    <MicButton
-                      isListening={questionVoice.isListening}
-                      isSupported={questionVoice.isSupported}
-                      onClick={() => questionVoice.toggle(input)}
-                    />
-                    <button
-                      onClick={handleAsk}
-                      disabled={isAsking || !input.trim()}
-                      className="shrink-0 bg-ink text-paper p-2.5 rounded-full disabled:opacity-25 hover:bg-accent transition-colors"
-                      title="Ask"
-                    >
-                      <IconArrowUp className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {questionVoice.isListening && (
-                    <p className="text-[12px] text-alert mt-2 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-alert animate-pulse" />
-                      Listening…
-                    </p>
-                  )}
-                  <p className="text-[11px] text-inkSoft/40 text-center mt-2.5">
-                    Answers are grounded strictly in your own journal entries
-                  </p>
+                <div className="bg-white border border-paperLine rounded-2xl p-2.5 flex items-center gap-2 shadow-sm shrink-0">
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask a question about your journal..."
+                    rows={1}
+                    className="flex-1 resize-none bg-transparent border-none focus:outline-none px-3 text-sm text-ink placeholder:text-inkSoft/50 max-h-32"
+                  />
+                  <MicButton
+                    isListening={questionVoice.isListening}
+                    isSupported={questionVoice.isSupported}
+                    onClick={() => questionVoice.toggle(input)}
+                  />
+                  <button
+                    onClick={handleAsk}
+                    disabled={isAsking || !input.trim()}
+                    className="p-2.5 rounded-full bg-ink text-paper disabled:opacity-20 hover:bg-ink/90 transition-colors shrink-0"
+                  >
+                    <IconArrowUp className="w-4 h-4" />
+                  </button>
                 </div>
+                <p className="text-[11px] text-center text-inkSoft/50 mt-2">
+                  Answers are grounded strictly in your own journal entries
+                </p>
               </div>
             )}
-
           </div>
         </div>
       </div>

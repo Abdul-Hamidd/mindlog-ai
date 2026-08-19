@@ -10,11 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from rag.ingestion import load_document
-from rag.chunking import chunk_text
-from rag.embeddings import embed_and_store, get_collection_count
-from rag.retriever import retrieve_relevant_chunks, clear_cache
-from rag.llm import generate_answer, generate_answer_stream
 from rag.db import (
     create_conversation,
     get_user_conversations,
@@ -29,6 +24,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Allow all origins for Vercel and local dev
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -78,13 +74,22 @@ class MessageSave(BaseModel):
     sources: Optional[List[str]] = None
 
 
+# ─── SNAPDEPLOY HEALTH CHECK ENDPOINTS (FIXES SHUTDOWN ISSUE) ───
 @app.get("/")
+@app.get("/health")
+@app.get("/healthz")
+@app.get("/api/health")
 def health_check():
-    return {"status": "ok", "service": "MindLog API"}
+    return {"status": "ok", "service": "MindLog API", "healthy": True}
 
 
 @app.post("/upload", response_model=UploadResponse)
 async def upload_document(file: UploadFile = File(...)):
+    from rag.ingestion import load_document
+    from rag.chunking import chunk_text
+    from rag.embeddings import embed_and_store, get_collection_count
+    from rag.retriever import clear_cache
+
     allowed_extensions = {".pdf", ".docx", ".txt", ".csv"}
     ext = os.path.splitext(file.filename)[1].lower()
 
@@ -119,10 +124,10 @@ async def upload_document(file: UploadFile = File(...)):
 
 @app.post("/entries", response_model=UploadResponse)
 def create_journal_entry(entry: JournalEntry):
-    """
-    Save a journal entry: chunk it, embed it, and store it — reusing the same
-    RAG pipeline used for documents, but for user-written text instead of files.
-    """
+    from rag.chunking import chunk_text
+    from rag.embeddings import embed_and_store, get_collection_count
+    from rag.retriever import clear_cache
+
     if not entry.content.strip():
         raise HTTPException(status_code=400, detail="Entry cannot be empty.")
 
@@ -143,6 +148,10 @@ def create_journal_entry(entry: JournalEntry):
 
 @app.post("/query", response_model=QueryResponse)
 async def query_documents(request: QueryRequest):
+    from rag.embeddings import get_collection_count
+    from rag.retriever import retrieve_relevant_chunks
+    from rag.llm import generate_answer
+
     if get_collection_count() == 0:
         raise HTTPException(
             status_code=400,
@@ -166,9 +175,10 @@ async def query_documents(request: QueryRequest):
 
 @app.post("/query/stream")
 def query_documents_stream(request: QueryRequest):
-    """
-    Same as /query but streams the answer token-by-token, with conversation history support.
-    """
+    from rag.embeddings import get_collection_count
+    from rag.retriever import retrieve_relevant_chunks
+    from rag.llm import generate_answer_stream
+
     if get_collection_count() == 0:
         raise HTTPException(
             status_code=400,
@@ -218,11 +228,13 @@ def remove_conversation(conversation_id: str):
 
 @app.get("/stats", response_model=StatsResponse)
 def get_stats():
+    from rag.embeddings import get_collection_count
     return StatsResponse(total_chunks=get_collection_count())
 
 
 @app.delete("/cache")
 def clear_query_cache():
+    from rag.retriever import clear_cache
     clear_cache()
     return {"status": "cache cleared"}
 
