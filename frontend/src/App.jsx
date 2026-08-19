@@ -206,8 +206,33 @@ function App() {
   }, [messages])
 
   // Warm up the backend container on app load.
+  // SnapDeploy's free-tier container returns 503 (without CORS headers)
+  // while it's waking up from sleep, which makes a single ping fail.
+  // Retry every 8s for up to ~100s so the container is awake by the
+  // time the user actually sends a question.
   useEffect(() => {
-    fetch(API_URL).catch(() => {})
+    let attempts = 0
+    const maxAttempts = 12 // ~100 seconds total (12 x 8s)
+    let timeoutId = null
+
+    const tryWakeUp = () => {
+      fetch(API_URL)
+        .then(() => {
+          // Success — container is awake, stop retrying
+        })
+        .catch(() => {
+          attempts++
+          if (attempts < maxAttempts) {
+            timeoutId = setTimeout(tryWakeUp, 8000)
+          }
+        })
+    }
+
+    tryWakeUp()
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
   }, [])
 
   useEffect(() => {
