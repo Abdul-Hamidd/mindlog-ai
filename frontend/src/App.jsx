@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 
 // Backend API Base URL
-const API_URL = 'https://mindlog-ai-71ada.containers.snapdeploy.app'
+const API_URL = 'https://mindlog-backend.fastapicloud.dev'
 
 // Generate or retrieve persistent user ID
 function getUserId() {
