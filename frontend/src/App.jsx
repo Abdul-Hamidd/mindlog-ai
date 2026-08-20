@@ -313,13 +313,12 @@ function MicButton({
     <button
       type="button"
       onClick={onClick}
-      title={
-        isListening
-          ? 'Stop recording'
-          : 'Speak instead of typing'
-      }
+      title={isListening ? 'Stop recording' : 'Speak instead of typing'}
       className={`
-        shrink-0 p-2.5 rounded-full transition-all
+        shrink-0
+        p-2.5
+        rounded-full
+        transition-all
         ${
           isListening
             ? 'bg-red-100 text-red-600 shadow-sm'
@@ -388,6 +387,10 @@ function App() {
   const entryTextareaRef = useRef(null)
   const isAskingRef = useRef(false)
 
+  // Mobile swipe refs
+  const touchStartXRef = useRef(null)
+  const touchStartYRef = useRef(null)
+
   const entryVoice = useVoiceInput(setEntryText)
   const questionVoice = useVoiceInput(setInput)
 
@@ -437,9 +440,92 @@ function App() {
     entryTextareaRef.current.style.height =
       Math.min(
         entryTextareaRef.current.scrollHeight,
-        260
+        150
       ) + 'px'
   }, [entryText])
+
+  // ─────────────────────────────────────────
+  // Mobile swipe sidebar
+  // Right swipe = open
+  // Left swipe = close
+  // ─────────────────────────────────────────
+
+  useEffect(() => {
+    const handleTouchStart = (e) => {
+      if (window.innerWidth >= 768) return
+
+      const touch = e.touches[0]
+
+      touchStartXRef.current = touch.clientX
+      touchStartYRef.current = touch.clientY
+    }
+
+    const handleTouchEnd = (e) => {
+      if (window.innerWidth >= 768) return
+
+      if (
+        touchStartXRef.current === null ||
+        touchStartYRef.current === null
+      ) {
+        return
+      }
+
+      const touch = e.changedTouches[0]
+
+      const deltaX =
+        touch.clientX - touchStartXRef.current
+
+      const deltaY =
+        touch.clientY - touchStartYRef.current
+
+      touchStartXRef.current = null
+      touchStartYRef.current = null
+
+      // Don't interfere with normal vertical scrolling
+      if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        return
+      }
+
+      // Minimum horizontal swipe distance
+      if (Math.abs(deltaX) < 60) {
+        return
+      }
+
+      // Swipe right → open
+      if (deltaX > 0 && !sidebarOpen) {
+        setSidebarOpen(true)
+      }
+
+      // Swipe left → close
+      if (deltaX < 0 && sidebarOpen) {
+        setSidebarOpen(false)
+      }
+    }
+
+    document.addEventListener(
+      'touchstart',
+      handleTouchStart,
+      { passive: true }
+    )
+
+    document.addEventListener(
+      'touchend',
+      handleTouchEnd,
+      { passive: true }
+    )
+
+    return () => {
+      document.removeEventListener(
+        'touchstart',
+        handleTouchStart
+      )
+
+      document.removeEventListener(
+        'touchend',
+        handleTouchEnd
+      )
+    }
+  }, [sidebarOpen])
 
   // ─────────────────────────────────────────
   // API
@@ -463,7 +549,15 @@ function App() {
   const startNewReflection = () => {
     setMessages([])
     setCurrentConversationId(null)
-    setActiveTab('entries')
+    setActiveTab('reflect')
+
+    // On mobile close sidebar after starting reflection
+    if (
+      typeof window !== 'undefined' &&
+      window.innerWidth < 768
+    ) {
+      setSidebarOpen(false)
+    }
   }
 
   const openConversation = async (conversationId) => {
@@ -500,7 +594,6 @@ function App() {
       setIsLoadingConvo(false)
     }
 
-    // Mobile: clicking a conversation automatically closes sidebar.
     if (
       typeof window !== 'undefined' &&
       window.innerWidth < 768
@@ -812,9 +905,6 @@ function App() {
         finalAnswerText =
           sanitizeAnswer(cleanText)
 
-        // Direct streaming update.
-        // This avoids the previous typing-timer
-        // getting stuck on an early chunk.
         setMessages((prev) => {
           const updated = [...prev]
 
@@ -914,7 +1004,8 @@ function App() {
   return (
     <div
       className="
-        h-dvh min-h-screen
+        h-dvh
+        min-h-screen
         bg-gradient-to-br
         from-[#F4F8F4]
         via-[#F4F1FF]
@@ -925,16 +1016,16 @@ function App() {
         text-slate-800
       "
     >
-      {/* ────────────────────────────────────
-          Mobile backdrop
-      ───────────────────────────────────── */}
+
+      {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
           onClick={() =>
             setSidebarOpen(false)
           }
           className="
-            fixed inset-0
+            fixed
+            inset-0
             bg-slate-950/45
             backdrop-blur-[2px]
             z-30
@@ -946,19 +1037,25 @@ function App() {
       {/* ────────────────────────────────────
           Sidebar
       ───────────────────────────────────── */}
+
       <aside
         className={`
-          flex flex-col
+          flex
+          flex-col
           h-dvh
           shrink-0
           overflow-hidden
           transition-all
           duration-300
           ease-in-out
-          fixed inset-y-0 left-0
+          fixed
+          inset-y-0
+          left-0
           z-40
           w-[290px]
-          md:sticky md:top-0
+          md:sticky
+          md:top-0
+
           ${
             sidebarOpen
               ? 'translate-x-0 md:w-[290px]'
@@ -970,7 +1067,8 @@ function App() {
           className="
             w-[290px]
             h-full
-            flex flex-col
+            flex
+            flex-col
             bg-gradient-to-b
             from-[#173F35]
             via-[#1E5143]
@@ -979,6 +1077,7 @@ function App() {
             shadow-2xl
           "
         >
+
           {/* Sidebar header */}
           <div
             className="
@@ -990,14 +1089,17 @@ function App() {
             "
           >
             <div className="flex items-center gap-3">
+
               <div
                 className="
-                  w-11 h-11
+                  w-11
+                  h-11
                   rounded-2xl
                   bg-gradient-to-br
                   from-[#7BC6A4]
                   to-[#3D8C6C]
-                  flex items-center
+                  flex
+                  items-center
                   justify-center
                   shadow-lg
                   shadow-black/10
@@ -1007,6 +1109,7 @@ function App() {
               </div>
 
               <div className="min-w-0">
+
                 <h1
                   className="
                     font-display
@@ -1030,10 +1133,10 @@ function App() {
                 >
                   Your private space
                 </p>
+
               </div>
             </div>
 
-            {/* VIP badge */}
             <div
               className="
                 inline-flex
@@ -1061,11 +1164,13 @@ function App() {
 
           {/* New reflection */}
           <div className="px-4 pt-4 pb-4">
+
             <button
               onClick={startNewReflection}
               className="
                 w-full
-                flex items-center
+                flex
+                items-center
                 justify-center
                 gap-2
                 bg-gradient-to-r
@@ -1086,11 +1191,14 @@ function App() {
               <IconPlus className="w-4 h-4" />
               New reflection
             </button>
+
           </div>
 
           {/* Conversation title */}
           <div className="px-5 pb-3">
+
             <div className="flex items-center justify-between">
+
               <p
                 className="
                   text-[10px]
@@ -1115,7 +1223,9 @@ function App() {
               >
                 {conversations.length}
               </span>
+
             </div>
+
           </div>
 
           {/* Conversations */}
@@ -1130,6 +1240,7 @@ function App() {
               scrollbar-thin
             "
           >
+
             {conversations.length === 0 && (
               <div
                 className="
@@ -1145,12 +1256,14 @@ function App() {
               >
                 <div
                   className="
-                    w-9 h-9
+                    w-9
+                    h-9
                     mx-auto
                     mb-3
                     rounded-xl
                     bg-white/10
-                    flex items-center
+                    flex
+                    items-center
                     justify-center
                   "
                 >
@@ -1170,118 +1283,113 @@ function App() {
               </div>
             )}
 
-            {conversations.map(
-              (conv) => {
-                const isActive =
-                  conv.id ===
-                  currentConversationId
+            {conversations.map((conv) => {
 
-                return (
-                  <div
-                    key={conv.id}
-                    onClick={() =>
-                      openConversation(
-                        conv.id
+              const isActive =
+                conv.id === currentConversationId
+
+              return (
+                <div
+                  key={conv.id}
+                  onClick={() =>
+                    openConversation(conv.id)
+                  }
+                  className={`
+                    group
+                    relative
+                    flex
+                    items-start
+                    justify-between
+                    pl-4
+                    pr-3
+                    py-3.5
+                    rounded-2xl
+                    cursor-pointer
+                    transition-all
+
+                    ${
+                      isActive
+                        ? 'bg-white/[0.13] shadow-sm'
+                        : 'hover:bg-white/[0.07]'
+                    }
+                  `}
+                >
+
+                  {isActive && (
+                    <span
+                      className="
+                        absolute
+                        left-0
+                        top-3
+                        bottom-3
+                        w-1
+                        rounded-full
+                        bg-gradient-to-b
+                        from-[#9DE0BC]
+                        to-[#5DB68B]
+                      "
+                    />
+                  )}
+
+                  <div className="min-w-0 flex-1">
+
+                    <p
+                      className={`
+                        text-[13px]
+                        truncate
+                        leading-snug
+                        font-medium
+                        ${
+                          isActive
+                            ? 'text-white'
+                            : 'text-white/80'
+                        }
+                      `}
+                    >
+                      {conv.title}
+                    </p>
+
+                    <p
+                      className="
+                        text-[10px]
+                        text-white/35
+                        mt-1.5
+                      "
+                    >
+                      {timeAgo(conv.created_at)}
+                    </p>
+
+                  </div>
+
+                  <button
+                    onClick={(e) =>
+                      deleteConversation(
+                        conv.id,
+                        e
                       )
                     }
-                    className={`
-                      group
-                      relative
-                      flex
-                      items-start
-                      justify-between
-                      pl-4
-                      pr-3
-                      py-3.5
-                      rounded-2xl
-                      cursor-pointer
-                      transition-all
-                      ${
-                        isActive
-                          ? `
-                            bg-white/[0.13]
-                            shadow-sm
-                          `
-                          : `
-                            hover:bg-white/[0.07]
-                          `
-                      }
-                    `}
+                    className="
+                      opacity-0
+                      group-hover:opacity-100
+                      text-white/25
+                      hover:text-red-300
+                      ml-2
+                      mt-0.5
+                      transition-opacity
+                      shrink-0
+                      p-1
+                      rounded-lg
+                      hover:bg-red-400/10
+                    "
+                    title="Delete reflection"
                   >
-                    {isActive && (
-                      <span
-                        className="
-                          absolute
-                          left-0
-                          top-3
-                          bottom-3
-                          w-1
-                          rounded-full
-                          bg-gradient-to-b
-                          from-[#9DE0BC]
-                          to-[#5DB68B]
-                        "
-                      />
-                    )}
+                    <IconTrash className="w-3.5 h-3.5" />
+                  </button>
 
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`
-                          text-[13px]
-                          truncate
-                          leading-snug
-                          font-medium
-                          ${
-                            isActive
-                              ? 'text-white'
-                              : 'text-white/80'
-                          }
-                        `}
-                      >
-                        {conv.title}
-                      </p>
+                </div>
+              )
+            })}
 
-                      <p
-                        className="
-                          text-[10px]
-                          text-white/35
-                          mt-1.5
-                        "
-                      >
-                        {timeAgo(
-                          conv.created_at
-                        )}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={(e) =>
-                        deleteConversation(
-                          conv.id,
-                          e
-                        )
-                      }
-                      className="
-                        opacity-0
-                        group-hover:opacity-100
-                        text-white/25
-                        hover:text-red-300
-                        ml-2
-                        mt-0.5
-                        transition-opacity
-                        shrink-0
-                        p-1
-                        rounded-lg
-                        hover:bg-red-400/10
-                      "
-                      title="Delete reflection"
-                    >
-                      <IconTrash className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )
-              }
-            )}
           </div>
 
           {/* Sidebar footer */}
@@ -1294,6 +1402,7 @@ function App() {
             "
           >
             <div className="flex items-start gap-2.5">
+
               <span
                 className="
                   w-2
@@ -1316,14 +1425,17 @@ function App() {
                 Your reflections stay grounded
                 in your own words.
               </p>
+
             </div>
           </div>
+
         </div>
       </aside>
 
       {/* ────────────────────────────────────
           Main
       ───────────────────────────────────── */}
+
       <main
         className="
           flex-1
@@ -1334,9 +1446,8 @@ function App() {
           overflow-hidden
         "
       >
-        {/* ──────────────────────────────────
-            Top bar
-        ─────────────────────────────────── */}
+
+        {/* Top bar */}
         <header
           className="
             relative
@@ -1358,6 +1469,7 @@ function App() {
             z-20
           "
         >
+
           <div
             className="
               flex
@@ -1366,38 +1478,29 @@ function App() {
               min-w-0
             "
           >
-            {/* SINGLE SIDEBAR BUTTON */}
+
+            {/* ONE SIDEBAR BUTTON ONLY */}
             <button
+              type="button"
               onClick={() =>
                 setSidebarOpen(
                   (value) => !value
                 )
               }
-              className={`
+              className="
                 text-slate-600
                 hover:text-[#225344]
                 p-2.5
                 rounded-xl
-                bg-white/70
+                bg-white/80
                 border
-                border-white/80
+                border-white
                 shadow-sm
-                hover:shadow
+                hover:shadow-md
+                active:scale-95
                 transition-all
                 shrink-0
-                ${
-                  sidebarOpen
-                    ? `
-                      md:static
-                      fixed
-                      top-4
-                      right-4
-                      z-[60]
-                      bg-white
-                    `
-                    : ''
-                }
-              `}
+              "
               title={
                 sidebarOpen
                   ? 'Close sidebar'
@@ -1426,7 +1529,7 @@ function App() {
               "
             />
 
-            {/* Separate tabs */}
+            {/* Tabs */}
             <div
               className="
                 flex
@@ -1436,6 +1539,7 @@ function App() {
                 min-w-0
               "
             >
+
               <button
                 onClick={() =>
                   setActiveTab('entries')
@@ -1452,6 +1556,7 @@ function App() {
                   font-semibold
                   transition-all
                   border
+
                   ${
                     activeTab === 'entries'
                       ? `
@@ -1489,6 +1594,7 @@ function App() {
                   font-semibold
                   transition-all
                   border
+
                   ${
                     activeTab === 'reflect'
                       ? `
@@ -1509,7 +1615,9 @@ function App() {
                 <IconCompass className="w-3.5 h-3.5" />
                 <span>Reflection</span>
               </button>
+
             </div>
+
           </div>
 
           {/* Entry counter */}
@@ -1541,11 +1649,10 @@ function App() {
               this session
             </span>
           </div>
+
         </header>
 
-        {/* ──────────────────────────────────
-            Content scroll area
-        ─────────────────────────────────── */}
+        {/* Content */}
         <div
           className="
             flex-1
@@ -1560,6 +1667,7 @@ function App() {
             lg:py-8
           "
         >
+
           <div
             className="
               w-full
@@ -1567,9 +1675,11 @@ function App() {
               mx-auto
             "
           >
-            {/* ─────────────────────────────
+
+            {/* ═══════════════════════════════
                 ENTRIES
-            ────────────────────────────── */}
+            ═══════════════════════════════ */}
+
             {activeTab === 'entries' && (
               <section
                 className="
@@ -1582,7 +1692,7 @@ function App() {
                   overflow-hidden
                 "
               >
-                {/* Colorful top strip */}
+
                 <div
                   className="
                     h-2
@@ -1599,7 +1709,8 @@ function App() {
                     sm:p-7
                   "
                 >
-                  {/* Friendly greeting */}
+
+                  {/* Greeting */}
                   <div
                     className="
                       flex
@@ -1608,6 +1719,7 @@ function App() {
                       mb-5
                     "
                   >
+
                     <div
                       className="
                         w-10
@@ -1656,6 +1768,7 @@ function App() {
                         entry 🙂
                       </p>
                     </div>
+
                   </div>
 
                   {/* Mood selection */}
@@ -1666,6 +1779,7 @@ function App() {
                       mb-5
                     "
                   >
+
                     <p
                       className="
                         text-[11px]
@@ -1687,9 +1801,9 @@ function App() {
                       "
                     >
                       {MOODS.map((m) => {
+
                         const isSelected =
-                          selectedMood ===
-                          m.label
+                          selectedMood === m.label
 
                         return (
                           <button
@@ -1754,25 +1868,22 @@ function App() {
                         )
                       })}
                     </div>
+
                   </div>
 
-                  {/* Entry box */}
+                  {/* COMPACT ENTRY BOX */}
                   <div className="relative">
+
                     <textarea
-                      ref={
-                        entryTextareaRef
-                      }
+                      ref={entryTextareaRef}
                       value={entryText}
                       onChange={(e) =>
                         setEntryText(
                           e.target.value
                         )
                       }
-                      placeholder="
-                        Write whatever is on your mind...
-                        This is your private space.
-                      "
-                      rows={5}
+                      placeholder="Write whatever is on your mind... This is your private space."
+                      rows={3}
                       className="
                         w-full
                         resize-none
@@ -1784,7 +1895,7 @@ function App() {
                         rounded-[20px]
                         pl-4
                         pr-14
-                        py-4
+                        py-3
                         text-[15px]
                         text-slate-700
                         placeholder:text-slate-400
@@ -1794,12 +1905,11 @@ function App() {
                         focus:ring-[#72B996]/10
                         transition-all
                         leading-relaxed
-                        min-h-[145px]
-                        max-h-[260px]
+                        min-h-[90px]
+                        max-h-[150px]
                       "
                     />
 
-                    {/* MIC INSIDE ENTRY BOX */}
                     <MicButton
                       isListening={
                         entryVoice.isListening
@@ -1820,6 +1930,7 @@ function App() {
                         shadow-sm
                       "
                     />
+
                   </div>
 
                   {entryVoice.isListening && (
@@ -1861,6 +1972,7 @@ function App() {
                       mt-4
                     "
                   >
+
                     <div
                       className="
                         text-[11px]
@@ -1883,9 +1995,7 @@ function App() {
                     </div>
 
                     <button
-                      onClick={
-                        handleSaveEntry
-                      }
+                      onClick={handleSaveEntry}
                       disabled={
                         isSavingEntry ||
                         !entryText.trim()
@@ -1932,11 +2042,11 @@ function App() {
 
                       Save entry
                     </button>
+
                   </div>
 
                   {/* Recent entries */}
-                  {recentEntries.length >
-                    0 && (
+                  {recentEntries.length > 0 && (
                     <div
                       className="
                         mt-6
@@ -1945,6 +2055,7 @@ function App() {
                         border-slate-200
                       "
                     >
+
                       <p
                         className="
                           text-[11px]
@@ -1967,11 +2078,11 @@ function App() {
                       >
                         {recentEntries.map(
                           (e, i) => {
+
                             const mood =
                               MOODS.find(
                                 (m) =>
-                                  m.label ===
-                                  e.mood
+                                  m.label === e.mood
                               )
 
                             const moodColor =
@@ -2002,6 +2113,7 @@ function App() {
                                     moodColor,
                                 }}
                               >
+
                                 <span
                                   className="
                                     w-1.5
@@ -2023,6 +2135,7 @@ function App() {
                           }
                         )}
                       </div>
+
                     </div>
                   )}
 
@@ -2039,13 +2152,16 @@ function App() {
                     out to a professional if you
                     need support.
                   </p>
+
                 </div>
+
               </section>
             )}
 
-            {/* ─────────────────────────────
+            {/* ═══════════════════════════════
                 REFLECTION
-            ────────────────────────────── */}
+            ═══════════════════════════════ */}
+
             {activeTab === 'reflect' && (
               <section
                 className="
@@ -2060,7 +2176,8 @@ function App() {
                   flex-col
                 "
               >
-                {/* Colorful header */}
+
+                {/* Reflection header */}
                 <div
                   className="
                     px-4
@@ -2074,6 +2191,7 @@ function App() {
                     border-white
                   "
                 >
+
                   <div
                     className="
                       flex
@@ -2081,6 +2199,7 @@ function App() {
                       gap-3
                     "
                   >
+
                     <div
                       className="
                         w-11
@@ -2100,6 +2219,7 @@ function App() {
                     </div>
 
                     <div className="min-w-0">
+
                       <p
                         className="
                           text-[10px]
@@ -2124,14 +2244,18 @@ function App() {
                         Ask your journal
                         anything
                       </h2>
+
                     </div>
+
                   </div>
+
                 </div>
 
                 {/* Messages */}
                 <div
                   className={`
                     min-h-0
+
                     ${
                       hasMessages
                         ? `
@@ -2154,6 +2278,7 @@ function App() {
                     }
                   `}
                 >
+
                   {isLoadingConvo && (
                     <div
                       className="
@@ -2187,6 +2312,8 @@ function App() {
                     </div>
                   )}
 
+                  {/* EMPTY REFLECTION STATE
+                      Duplicate logo removed */}
                   {!isLoadingConvo &&
                     messages.length === 0 && (
                       <div
@@ -2198,23 +2325,6 @@ function App() {
                           max-w-md
                         "
                       >
-                        <div
-                          className="
-                            w-14
-                            h-14
-                            rounded-[20px]
-                            bg-gradient-to-br
-                            from-[#8E79C5]
-                            to-[#61A283]
-                            flex
-                            items-center
-                            justify-center
-                            mb-5
-                            shadow-lg
-                          "
-                        >
-                          <IconCompass className="w-6 h-6 text-white" />
-                        </div>
 
                         <p
                           className="
@@ -2255,6 +2365,7 @@ function App() {
                           you've written in your
                           journal.
                         </p>
+
                       </div>
                     )}
 
@@ -2266,15 +2377,14 @@ function App() {
                           className={`
                             flex
                             ${
-                              msg.role ===
-                              'user'
+                              msg.role === 'user'
                                 ? 'justify-end'
                                 : 'justify-start gap-2.5'
                             }
                           `}
                         >
-                          {msg.role ===
-                          'system' ? (
+
+                          {msg.role === 'system' ? (
                             <div
                               className="
                                 text-[11px]
@@ -2285,8 +2395,7 @@ function App() {
                             >
                               {msg.content}
                             </div>
-                          ) : msg.role ===
-                            'user' ? (
+                          ) : msg.role === 'user' ? (
                             <div
                               className="
                                 max-w-[85%]
@@ -2313,8 +2422,7 @@ function App() {
                               </p>
                             </div>
                           ) : (
-                            msg.content !==
-                              '' && (
+                            msg.content !== '' && (
                               <>
                                 <div
                                   className="
@@ -2365,6 +2473,7 @@ function App() {
                               </>
                             )
                           )}
+
                         </div>
                       )
                     )}
@@ -2377,6 +2486,7 @@ function App() {
                         gap-2.5
                       "
                     >
+
                       <div
                         className="
                           w-8
@@ -2410,13 +2520,15 @@ function App() {
                         <span className="w-1.5 h-1.5 rounded-full bg-[#8066A9] animate-pulse [animation-delay:150ms]" />
                         <span className="w-1.5 h-1.5 rounded-full bg-[#8066A9] animate-pulse [animation-delay:300ms]" />
                       </div>
+
                     </div>
                   )}
 
                   <div ref={chatEndRef} />
+
                 </div>
 
-                {/* Chat input */}
+                {/* Reflection chat input */}
                 <div
                   className="
                     border-t
@@ -2429,9 +2541,7 @@ function App() {
                     to-[#FFF8F1]
                   "
                 >
-                  {/* IMPORTANT:
-                      mic + send are INSIDE the same chat box
-                  */}
+
                   <div
                     className="
                       flex
@@ -2450,6 +2560,7 @@ function App() {
                       transition-all
                     "
                   >
+
                     <textarea
                       ref={textareaRef}
                       value={input}
@@ -2458,12 +2569,8 @@ function App() {
                           e.target.value
                         )
                       }
-                      onKeyDown={
-                        handleKeyDown
-                      }
-                      placeholder="
-                        Ask a question about your journal…
-                      "
+                      onKeyDown={handleKeyDown}
+                      placeholder="Ask a question about your journal…"
                       rows={1}
                       className="
                         flex-1
@@ -2481,7 +2588,6 @@ function App() {
                       "
                     />
 
-                    {/* CHAT MIC */}
                     <MicButton
                       isListening={
                         questionVoice.isListening
@@ -2496,7 +2602,6 @@ function App() {
                       }
                     />
 
-                    {/* SEND */}
                     <button
                       onClick={handleAsk}
                       disabled={
@@ -2525,6 +2630,7 @@ function App() {
                     >
                       <IconArrowUp className="w-4 h-4" />
                     </button>
+
                   </div>
 
                   {questionVoice.isListening && (
@@ -2564,11 +2670,13 @@ function App() {
                     strictly in your own
                     journal entries.
                   </p>
+
                 </div>
+
               </section>
             )}
 
-            {/* Small mobile counter */}
+            {/* Mobile counter */}
             <div
               className="
                 sm:hidden
@@ -2589,8 +2697,10 @@ function App() {
                 : 'entries'}{' '}
               this session
             </div>
+
           </div>
         </div>
+
       </main>
     </div>
   )
