@@ -432,6 +432,9 @@ function App() {
       ) + 'px'
   }, [input])
 
+  // Entry textarea auto-resize — floor/ceiling match the Reflection
+  // box's empty-state height (280px mobile / 360px larger screens)
+  // so both tabs render at the same overall height.
   useEffect(() => {
     if (!entryTextareaRef.current) return
 
@@ -439,8 +442,8 @@ function App() {
 
     entryTextareaRef.current.style.height =
       Math.min(
-        entryTextareaRef.current.scrollHeight,
-        150
+        Math.max(entryTextareaRef.current.scrollHeight, 280),
+        360
       ) + 'px'
   }, [entryText])
 
@@ -1871,7 +1874,7 @@ function App() {
 
                   </div>
 
-                  {/* COMPACT ENTRY BOX */}
+                  {/* ENTRY BOX — size now matches Reflection's box */}
                   <div className="relative">
 
                     <textarea
@@ -1883,7 +1886,7 @@ function App() {
                         )
                       }
                       placeholder="Write whatever is on your mind... This is your private space."
-                      rows={3}
+                      rows={8}
                       className="
                         w-full
                         resize-none
@@ -1905,8 +1908,10 @@ function App() {
                         focus:ring-[#72B996]/10
                         transition-all
                         leading-relaxed
-                        min-h-[90px]
-                        max-h-[150px]
+                        min-h-[280px]
+                        sm:min-h-[360px]
+                        max-h-[280px]
+                        sm:max-h-[360px]
                       "
                     />
 
