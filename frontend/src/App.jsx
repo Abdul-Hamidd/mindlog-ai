@@ -183,7 +183,10 @@ function App() {
   const [isLoadingConvo, setIsLoadingConvo] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('mindlog_sidebar_open')
-    return saved === null ? true : saved === 'true'
+    if (saved !== null) return saved === 'true'
+    // Default closed on small screens so it doesn't cover the whole app on first load
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return false
+    return true
   })
 
   const [entryText, setEntryText] = useState('')
@@ -455,11 +458,22 @@ function App() {
   return (
     <div className="min-h-screen bg-paper flex font-sans overflow-hidden">
 
-      {/* Sidebar */}
+      {/* Mobile backdrop — tap to close sidebar. Hidden on desktop, hidden when sidebar is closed. */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+        />
+      )}
+
+      {/* Sidebar — overlay drawer on mobile, in-flow column on desktop (md and up) */}
       <div
-        className={`bg-ink flex flex-col h-screen sticky top-0 shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${
-          sidebarOpen ? 'w-80' : 'w-0'
-        }`}
+        className={`bg-ink flex flex-col h-screen shrink-0 transition-all duration-300 ease-in-out overflow-hidden
+          fixed inset-y-0 left-0 z-40 w-80
+          md:sticky md:top-0 md:z-auto
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          ${sidebarOpen ? 'md:w-80' : 'md:w-0'}
+        `}
       >
         <div className="w-80 h-full flex flex-col">
           <div className="px-6 pt-8 pb-6">
@@ -528,8 +542,8 @@ function App() {
       <div className="flex-1 flex flex-col h-screen min-w-0">
 
         {/* Top bar */}
-        <div className="flex items-center justify-between gap-3 px-8 py-4 border-b border-paperLine shrink-0 bg-white/40">
-          <div className="flex items-center gap-4 min-w-0">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-8 py-4 border-b border-paperLine shrink-0 bg-white/40">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <button
               onClick={() => setSidebarOpen(v => !v)}
               className="text-inkSoft hover:text-ink transition-colors p-2 -ml-2 rounded-lg hover:bg-paperLine/60 shrink-0"
@@ -569,7 +583,7 @@ function App() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto flex flex-col items-center px-6 py-10">
+        <div className="flex-1 overflow-y-auto flex flex-col items-center px-4 sm:px-6 py-10">
           <div className="w-full max-w-2xl">
 
             {/* ─── WRITE TAB ─── */}
