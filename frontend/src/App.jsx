@@ -1,69 +1,50 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 
 const API_URL = 'https://mindlog-backend.fastapicloud.dev'
 
 function getUserId() {
   let userId = localStorage.getItem('mindlog_user_id')
-
   if (!userId) {
-    try {
-      userId = crypto.randomUUID()
-    } catch {
-      userId =
-        Date.now().toString(36) +
-        Math.random().toString(36).slice(2)
-    }
-
+    userId = crypto.randomUUID()
     localStorage.setItem('mindlog_user_id', userId)
   }
-
   return userId
 }
 
 function timeAgo(dateStr) {
-  if (!dateStr) return ''
-
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-
-  if (mins < 1) return 'Just now'
+  if (mins < 1) return 'just now'
   if (mins < 60) return `${mins}m ago`
-
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `${hrs}h ago`
-
   const days = Math.floor(hrs / 24)
-  if (days < 7) return `${days}d ago`
-
-  return new Date(dateStr).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric'
-  })
+  return `${days}d ago`
 }
 
 function sanitizeAnswer(text) {
   if (!text) return text
-
-  return text
-    .replace(/\n*based on entries:[\s\S]*$/i, '')
-    .replace(/\(?\s*Entry\s*—[^)]*\)?/gi, '')
-    .trim()
+  let cleaned = text
+  cleaned = cleaned.replace(/\n*based on entries:[\s\S]*$/i, '')
+  cleaned = cleaned.replace(/\(?\s*Entry\s*—[^)]*\)?/gi, '')
+  return cleaned.trim()
 }
 
 const MOODS = [
-  { label: 'Calm', emoji: '😌', color: '#6B84A0' },
-  { label: 'Content', emoji: '🙂', color: '#5B7A63' },
-  { label: 'Happy', emoji: '😊', color: '#4A8B7C' },
-  { label: 'Grateful', emoji: '🙏', color: '#B58900' },
-  { label: 'Excited', emoji: '✨', color: '#C2703D' },
-  { label: 'Stressed', emoji: '😣', color: '#B4704A' },
-  { label: 'Anxious', emoji: '😟', color: '#9A6B9E' },
-  { label: 'Sad', emoji: '😔', color: '#7D8A99' }
+  { label: 'Calm', color: '#6B84A0' },
+  { label: 'Content', color: '#5B7A63' },
+  { label: 'Happy', color: '#4A8B7C' },
+  { label: 'Grateful', color: '#B58900' },
+  { label: 'Excited', color: '#C2703D' },
+  { label: 'Stressed', color: '#B4704A' },
+  { label: 'Anxious', color: '#9A6B9E' },
+  { label: 'Sad', color: '#7D8A99' },
 ]
 
+// ─── Icons ────────────────────────────────
 const IconMenu = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
     <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
   </svg>
 )
@@ -75,7 +56,7 @@ const IconPlus = (props) => (
 )
 
 const IconTrash = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" {...props}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
     <path
       d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m2 0v13a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z"
       strokeLinecap="round"
@@ -91,7 +72,7 @@ const IconArrowUp = (props) => (
 )
 
 const IconBook = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" {...props}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
     <path d="M4 19.5A2.5 2.5 0 016.5 17H20" strokeLinecap="round" strokeLinejoin="round" />
     <path
       d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"
@@ -102,7 +83,7 @@ const IconBook = (props) => (
 )
 
 const IconPen = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" {...props}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
     <path d="M12 20h9" strokeLinecap="round" />
     <path
       d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
@@ -113,9 +94,13 @@ const IconPen = (props) => (
 )
 
 const IconCompass = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" {...props}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
     <circle cx="12" cy="12" r="9" />
-    <path d="M15 9l-3 6-3-6 3 1.5L15 9z" strokeLinecap="round" strokeLinejoin="round" />
+    <path
+      d="M15 9l-3 6-3-6 3 1.5L15 9z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 )
 
@@ -126,7 +111,7 @@ const IconCheck = (props) => (
 )
 
 const IconMic = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" {...props}>
     <path
       d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z"
       strokeLinecap="round"
@@ -136,47 +121,33 @@ const IconMic = (props) => (
   </svg>
 )
 
-const IconSparkles = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" {...props}>
-    <path
-      d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16z"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+// 3-dot icon
+const IconMore = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <circle cx="5" cy="12" r="1.7" />
+    <circle cx="12" cy="12" r="1.7" />
+    <circle cx="19" cy="12" r="1.7" />
   </svg>
 )
 
-const IconHeart = (props) => (
+// Sidebar swap / toggle icon
+const IconSwap = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" {...props}>
-    <path
-      d="M20.8 8.8c0 5.5-8.8 11.2-8.8 11.2S3.2 14.3 3.2 8.8A4.7 4.7 0 0112 6.2a4.7 4.7 0 018.8 2.6z"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <path d="M7 7h11l-3-3" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M17 17H6l3 3" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M18 7l-3-3M6 17l3 3" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 )
 
-const IconMessage = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" {...props}>
-    <path
-      d="M20 11.5a7.5 7.5 0 01-7.5 7.5H8l-4 2 1.5-4A7.5 7.5 0 1120 11.5z"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-)
-
+// ─── Voice input hook ──────────────────────
 function useVoiceInput(onResult) {
   const [isListening, setIsListening] = useState(false)
 
-  const isSupported =
-    typeof window !== 'undefined' &&
-    Boolean(window.SpeechRecognition || window.webkitSpeechRecognition)
+  const [isSupported] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      (window.SpeechRecognition || window.webkitSpeechRecognition)
+  )
 
   const recognitionRef = useRef(null)
   const baseTextRef = useRef('')
@@ -191,14 +162,9 @@ function useVoiceInput(onResult) {
 
     recognition.continuous = true
     recognition.interimResults = true
-    recognition.lang =
-      navigator.language?.toLowerCase().startsWith('ur')
-        ? 'ur-PK'
-        : 'en-US'
+    recognition.lang = 'en-US'
 
-    baseTextRef.current = currentText?.trim()
-      ? `${currentText.trim()} `
-      : ''
+    baseTextRef.current = currentText ? currentText.trim() + ' ' : ''
 
     recognition.onresult = (event) => {
       let transcript = ''
@@ -210,36 +176,36 @@ function useVoiceInput(onResult) {
       onResult(baseTextRef.current + transcript)
     }
 
-    recognition.onerror = () => setIsListening(false)
-    recognition.onend = () => setIsListening(false)
-
-    recognitionRef.current = recognition
-
-    try {
-      recognition.start()
-      setIsListening(true)
-    } catch {
+    recognition.onerror = () => {
       setIsListening(false)
     }
+
+    recognition.onend = () => {
+      setIsListening(false)
+    }
+
+    recognitionRef.current = recognition
+    recognition.start()
+    setIsListening(true)
   }
 
   const stop = () => {
-    try {
-      recognitionRef.current?.stop()
-    } catch {}
-
+    recognitionRef.current?.stop()
     setIsListening(false)
   }
 
   const toggle = (currentText) => {
-    if (isListening) stop()
-    else start(currentText)
+    if (isListening) {
+      stop()
+    } else {
+      start(currentText)
+    }
   }
 
   return {
     isListening,
     isSupported,
-    toggle
+    toggle,
   }
 }
 
@@ -247,7 +213,7 @@ function MicButton({
   isListening,
   isSupported,
   onClick,
-  className = ''
+  className = '',
 }) {
   if (!isSupported) return null
 
@@ -255,25 +221,19 @@ function MicButton({
     <button
       type="button"
       onClick={onClick}
-      title={isListening ? 'Stop recording' : 'Speak'}
-      aria-label={isListening ? 'Stop recording' : 'Start voice input'}
-      className={`
-        relative shrink-0 p-2.5 rounded-full
-        transition-all duration-200
-        ${
-          isListening
-            ? 'bg-alert/10 text-alert scale-105'
-            : 'text-inkSoft hover:text-ink hover:bg-paperLine/60'
-        }
-        ${className}
-      `}
+      title={isListening ? 'Stop recording' : 'Speak instead of typing'}
+      className={`shrink-0 p-2.5 rounded-full transition-colors ${
+        isListening
+          ? 'bg-alert/10 text-alert'
+          : 'text-inkSoft hover:text-ink hover:bg-paperLine/50'
+      } ${className}`}
     >
-      {isListening && (
-        <span className="absolute inset-0 rounded-full bg-alert/10 animate-ping" />
-      )}
-
       <span className="relative flex items-center justify-center">
-        <IconMic className="w-[18px] h-[18px]" />
+        {isListening && (
+          <span className="absolute w-6 h-6 rounded-full bg-alert/20 animate-ping" />
+        )}
+
+        <IconMic className="w-[18px] h-[18px] relative" />
       </span>
     </button>
   )
@@ -283,19 +243,37 @@ function App() {
   const [userId] = useState(getUserId)
 
   const [activeTab, setActiveTab] = useState('write')
+
   const [conversations, setConversations] = useState([])
   const [currentConversationId, setCurrentConversationId] = useState(null)
+
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
+
   const [isAsking, setIsAsking] = useState(false)
   const [isLoadingConvo, setIsLoadingConvo] = useState(false)
 
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('mindlog_sidebar_open')
+
+    if (saved !== null) return saved === 'true'
+
+    if (
+      typeof window !== 'undefined' &&
+      window.innerWidth < 768
+    ) {
+      return false
+    }
+
+    return true
+  })
 
   const [entryText, setEntryText] = useState('')
   const [selectedMood, setSelectedMood] = useState(null)
+
   const [isSavingEntry, setIsSavingEntry] = useState(false)
   const [saveConfirmation, setSaveConfirmation] = useState(null)
+
   const [recentEntries, setRecentEntries] = useState([])
   const [entryCount, setEntryCount] = useState(0)
 
@@ -309,40 +287,49 @@ function App() {
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({
-      behavior: 'smooth'
+      behavior: 'smooth',
     })
   }, [messages])
 
+  // Warm up backend
   useEffect(() => {
     fetch(API_URL).catch(() => {})
+  }, [])
+
+  useEffect(() => {
     refreshConversations()
   }, [])
 
   useEffect(() => {
+    localStorage.setItem(
+      'mindlog_sidebar_open',
+      sidebarOpen
+    )
+  }, [sidebarOpen])
+
+  useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
+
       textareaRef.current.style.height =
-        Math.min(textareaRef.current.scrollHeight, 160) + 'px'
+        Math.min(
+          textareaRef.current.scrollHeight,
+          160
+        ) + 'px'
     }
   }, [input])
 
   useEffect(() => {
     if (entryTextareaRef.current) {
       entryTextareaRef.current.style.height = 'auto'
+
       entryTextareaRef.current.style.height =
-        Math.min(entryTextareaRef.current.scrollHeight, 220) + 'px'
+        Math.min(
+          entryTextareaRef.current.scrollHeight,
+          320
+        ) + 'px'
     }
   }, [entryText])
-
-  const toggleSidebar = () => {
-    setSidebarOpen((prev) => !prev)
-  }
-
-  const closeSidebarOnMobile = () => {
-    if (window.innerWidth < 768) {
-      setSidebarOpen(false)
-    }
-  }
 
   const refreshConversations = async () => {
     try {
@@ -350,7 +337,7 @@ function App() {
         `${API_URL}/conversations/${userId}`
       )
 
-      setConversations(res.data || [])
+      setConversations(res.data)
     } catch (err) {
       console.error(
         'Failed to load conversations',
@@ -359,13 +346,9 @@ function App() {
     }
   }
 
-  const startNewReflection = () => {
+  const startNewReflection = async () => {
     setMessages([])
     setCurrentConversationId(null)
-    setInput('')
-    setActiveTab('write')
-
-    closeSidebarOnMobile()
   }
 
   const openConversation = async (conversationId) => {
@@ -378,7 +361,7 @@ function App() {
         `${API_URL}/conversations/${conversationId}/messages`
       )
 
-      const loaded = (res.data || [])
+      const loaded = res.data
         .filter(
           (m) =>
             m.content &&
@@ -389,10 +372,19 @@ function App() {
           content:
             m.role === 'assistant'
               ? sanitizeAnswer(m.content)
-              : m.content
+              : m.content,
         }))
 
       setMessages(loaded)
+
+      // Mobile friendly:
+      // conversation open karne ke baad sidebar automatically close
+      if (
+        typeof window !== 'undefined' &&
+        window.innerWidth < 768
+      ) {
+        setSidebarOpen(false)
+      }
     } catch (err) {
       console.error(
         'Failed to load conversation messages',
@@ -400,7 +392,6 @@ function App() {
       )
     } finally {
       setIsLoadingConvo(false)
-      closeSidebarOnMobile()
     }
   }
 
@@ -418,11 +409,10 @@ function App() {
       if (
         conversationId === currentConversationId
       ) {
-        setMessages([])
-        setCurrentConversationId(null)
+        startNewReflection()
       }
 
-      await refreshConversations()
+      refreshConversations()
     } catch (err) {
       console.error(
         'Failed to delete conversation',
@@ -438,24 +428,22 @@ function App() {
       return currentConversationId
     }
 
-    const cleanTitle = firstMessageText.trim()
-
     const title =
-      cleanTitle.length > 42
-        ? cleanTitle.slice(0, 42) + '...'
-        : cleanTitle
+      firstMessageText.length > 40
+        ? firstMessageText.slice(0, 40) + '...'
+        : firstMessageText
 
     const res = await axios.post(
       `${API_URL}/conversations`,
       {
         user_id: userId,
-        title
+        title,
       }
     )
 
     setCurrentConversationId(res.data.id)
 
-    await refreshConversations()
+    refreshConversations()
 
     return res.data.id
   }
@@ -464,15 +452,18 @@ function App() {
     conversationId,
     role,
     content,
-    sources = []
+    sources
   ) => {
     try {
-      await axios.post(`${API_URL}/messages`, {
-        conversation_id: conversationId,
-        role,
-        content,
-        sources
-      })
+      await axios.post(
+        `${API_URL}/messages`,
+        {
+          conversation_id: conversationId,
+          role,
+          content,
+          sources: sources || [],
+        }
+      )
     } catch (err) {
       console.error(
         'Failed to save message',
@@ -489,35 +480,32 @@ function App() {
     }
 
     setIsSavingEntry(true)
-    setSaveConfirmation(null)
 
     try {
       const res = await axios.post(
         `${API_URL}/entries`,
         {
-          content: entryText.trim(),
-          mood: selectedMood
+          content: entryText,
+          mood: selectedMood,
         }
       )
 
-      setRecentEntries((prev) =>
-        [
-          {
-            label: res.data.filename,
-            mood: selectedMood
-          },
-          ...prev
-        ].slice(0, 5)
-      )
+      setRecentEntries((prev) => [
+        {
+          label: res.data.filename,
+          mood: selectedMood,
+        },
+        ...prev,
+      ].slice(0, 5))
 
       setEntryCount((prev) => prev + 1)
 
       setSaveConfirmation(
-        `Saved • ${new Date().toLocaleDateString(
+        `Saved — ${new Date().toLocaleDateString(
           undefined,
           {
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
           }
         )}`
       )
@@ -542,12 +530,8 @@ function App() {
   }
 
   const handleAsk = async () => {
-    if (
-      isAskingRef.current ||
-      !input.trim()
-    ) {
-      return
-    }
+    if (isAskingRef.current) return
+    if (!input.trim()) return
 
     if (questionVoice.isListening) {
       questionVoice.toggle(input)
@@ -555,64 +539,63 @@ function App() {
 
     isAskingRef.current = true
 
-    const question = input.trim()
+    const question = input
 
     setInput('')
-    setActiveTab('reflect')
 
-    const conversationHistory =
-      messages
-        .filter(
-          (m) =>
-            m.role === 'user' ||
-            m.role === 'assistant'
-        )
-        .map((m) => ({
-          role: m.role,
-          content: m.content
-        }))
+    const conversationHistory = messages
+      .filter(
+        (m) =>
+          m.role === 'user' ||
+          m.role === 'assistant'
+      )
+      .map((m) => ({
+        role: m.role,
+        content: m.content,
+      }))
 
     setMessages((prev) => [
       ...prev,
       {
         role: 'user',
-        content: question
+        content: question,
       },
-      {
-        role: 'assistant',
-        content: ''
-      }
     ])
 
     setIsAsking(true)
 
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: '',
+      },
+    ])
+
+    const conversationId =
+      await ensureConversation(question)
+
+    saveMessageToDb(
+      conversationId,
+      'user',
+      question,
+      []
+    )
+
     try {
-      const conversationId =
-        await ensureConversation(
-          question
-        )
-
-      await saveMessageToDb(
-        conversationId,
-        'user',
-        question,
-        []
-      )
-
       const response = await fetch(
         `${API_URL}/query/stream`,
         {
           method: 'POST',
           headers: {
-            'Content-Type':
-              'application/json'
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             query: question,
             n_results: 5,
             file_filter: null,
-            history: conversationHistory
-          })
+            history: conversationHistory,
+          }),
         }
       )
 
@@ -628,46 +611,107 @@ function App() {
         )
       }
 
-      if (!response.body) {
-        throw new Error(
-          'No response stream received.'
-        )
-      }
-
       const reader =
         response.body.getReader()
 
-      const decoder = new TextDecoder()
+      const decoder =
+        new TextDecoder()
 
       let fullText = ''
       let sources = []
+      let displayedLength = 0
+      let typingTimer = null
+
+      const revealText = (
+        rawCleanText
+      ) => {
+        const cleanText =
+          sanitizeAnswer(
+            rawCleanText
+          )
+
+        if (typingTimer) return
+
+        typingTimer = setInterval(
+          () => {
+            displayedLength =
+              Math.min(
+                displayedLength + 3,
+                cleanText.length
+              )
+
+            setMessages((prev) => {
+              const updated = [
+                ...prev,
+              ]
+
+              updated[
+                updated.length - 1
+              ] = {
+                ...updated[
+                  updated.length - 1
+                ],
+                role: 'assistant',
+                content:
+                  cleanText.slice(
+                    0,
+                    displayedLength
+                  ),
+              }
+
+              return updated
+            })
+
+            if (
+              displayedLength >=
+              cleanText.length
+            ) {
+              clearInterval(
+                typingTimer
+              )
+
+              typingTimer = null
+            }
+          },
+          15
+        )
+      }
+
       let finalAnswerText = ''
 
       while (true) {
         const {
           done,
-          value
+          value,
         } = await reader.read()
 
         if (done) break
 
-        fullText += decoder.decode(
-          value,
-          { stream: true }
-        )
+        fullText +=
+          decoder.decode(
+            value,
+            {
+              stream: true,
+            }
+          )
 
         const scoresMarkerIndex =
           fullText.indexOf(
             '__SCORES__'
           )
 
-        const textBeforeScores =
+        let textBeforeScores =
+          fullText
+
+        if (
           scoresMarkerIndex !== -1
-            ? fullText.slice(
-                0,
-                scoresMarkerIndex
-              )
-            : fullText
+        ) {
+          textBeforeScores =
+            fullText.slice(
+              0,
+              scoresMarkerIndex
+            )
+        }
 
         const markerIndex =
           textBeforeScores.indexOf(
@@ -677,10 +721,15 @@ function App() {
         let cleanText =
           textBeforeScores
 
-        if (markerIndex !== -1) {
+        if (
+          markerIndex !== -1
+        ) {
           cleanText =
             textBeforeScores
-              .slice(0, markerIndex)
+              .slice(
+                0,
+                markerIndex
+              )
               .trimEnd()
 
           try {
@@ -694,55 +743,48 @@ function App() {
               )
 
             sources =
-              meta.sources || []
+              meta.sources ||
+              []
           } catch {}
         }
 
         finalAnswerText =
-          sanitizeAnswer(cleanText)
+          sanitizeAnswer(
+            cleanText
+          )
 
-        setMessages((prev) => {
-          const updated = [
-            ...prev
-          ]
-
-          updated[
-            updated.length - 1
-          ] = {
-            role: 'assistant',
-            content:
-              finalAnswerText
-          }
-
-          return updated
-        })
+        revealText(cleanText)
       }
 
-      await saveMessageToDb(
+      await new Promise(
+        (resolve) => {
+          const check =
+            setInterval(() => {
+              if (!typingTimer) {
+                clearInterval(check)
+                resolve()
+              }
+            }, 50)
+        }
+      )
+
+      saveMessageToDb(
         conversationId,
         'assistant',
         finalAnswerText,
         sources
       )
-
-      await refreshConversations()
     } catch (err) {
-      console.error(err)
-
       setMessages((prev) => {
         const updated = [
-          ...prev
+          ...prev,
         ]
 
         updated[
           updated.length - 1
         ] = {
           role: 'assistant',
-          content:
-            `I'm sorry, something went wrong. ${
-              err.message ||
-              'Please try again.'
-            }`
+          content: `Something went wrong: ${err.message}`,
         }
 
         return updated
@@ -763,27 +805,6 @@ function App() {
     }
   }
 
-  const quickQuestions = [
-    'How have I been feeling lately?',
-    'What makes me happy?',
-    'What have I been working on?',
-    'What patterns do you notice?',
-    'What should I reflect on today?'
-  ]
-
-  const askQuickQuestion = (
-    question
-  ) => {
-    setInput(question)
-    setActiveTab('reflect')
-
-    setTimeout(
-      () =>
-        textareaRef.current?.focus(),
-      50
-    )
-  }
-
   const hasMessages =
     !isLoadingConvo &&
     messages.length > 0
@@ -797,239 +818,211 @@ function App() {
     lastMsg?.content === ''
 
   return (
-    <div className="min-h-screen bg-paper flex font-sans overflow-hidden text-ink">
+    <div className="min-h-screen bg-paper flex font-sans overflow-hidden">
 
-      {/* MOBILE BACKDROP */}
+      {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
           onClick={() =>
             setSidebarOpen(false)
           }
-          className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-30 md:hidden"
+          className="fixed inset-0 bg-black/40 z-30 md:hidden"
         />
       )}
 
-      {/* SIDEBAR */}
-      <aside
-        className={`
-          fixed inset-y-0 left-0 z-40
-          w-[290px]
-          bg-ink text-paper
-          flex flex-col
-          shadow-2xl
-          overflow-hidden
-          transition-all duration-300 ease-in-out
-          md:sticky md:top-0 md:h-screen
-          md:shadow-none
+      {/* ─────────────────────────────────────
+          SIDEBAR
+      ───────────────────────────────────── */}
+      <div
+        className={`bg-ink flex flex-col h-screen shrink-0 transition-all duration-300 ease-in-out overflow-hidden
+          fixed inset-y-0 left-0 z-40 w-80
+          md:sticky md:top-0 md:z-auto
           ${
             sidebarOpen
-              ? 'translate-x-0 md:w-[290px]'
-              : '-translate-x-full md:translate-x-0 md:w-0'
+              ? 'translate-x-0'
+              : '-translate-x-full md:translate-x-0'
+          }
+          ${
+            sidebarOpen
+              ? 'md:w-80'
+              : 'md:w-0'
           }
         `}
       >
-        <div className="w-[290px] min-w-[290px] h-full flex flex-col">
+        <div className="w-80 h-full flex flex-col">
 
-          {/* SIDEBAR HEADER */}
-          <div className="px-6 pt-6 pb-4">
-            <div className="flex items-center justify-between">
+          {/* Sidebar Header */}
+          <div className="px-6 pt-7 pb-5">
 
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shadow-lg">
-                  <IconCompass className="w-5 h-5 text-white" />
-                </div>
+            <div className="flex items-start justify-between gap-3">
 
-                <div>
-                  <h1 className="font-display text-[25px] tracking-tight leading-none">
-                    MindLog
-                  </h1>
+              <div>
+                <h1 className="font-display text-[26px] text-paper tracking-tight leading-none">
+                  MindLog
+                </h1>
 
-                  <p className="text-[10px] text-paper/45 mt-1 uppercase tracking-[0.18em]">
-                    Your private space
-                  </p>
-                </div>
+                <p className="text-xs text-paper/45 mt-2">
+                  Your journaling companion
+                </p>
               </div>
 
-              <button
-                onClick={() =>
-                  setSidebarOpen(false)
-                }
-                className="p-2 rounded-lg text-paper/60 hover:text-paper hover:bg-white/10 transition"
-                title="Close sidebar"
-              >
-                ✕
-              </button>
-            </div>
+              {/* Sidebar controls
+                  3 dots + swap/toggle
+              */}
+              <div className="flex items-center gap-1 shrink-0">
 
-            {/* VIP BADGE */}
-            <div className="mt-4 flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C9A44C]/20 to-[#E7D49A]/10 border border-[#C9A44C]/30">
-                <IconSparkles className="w-3.5 h-3.5 text-[#D8B95C]" />
+                {/* 3-dot option */}
+                <button
+                  type="button"
+                  title="Sidebar options"
+                  onClick={() =>
+                    setSidebarOpen(
+                      (value) => !value
+                    )
+                  }
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-paper/50 hover:text-paper hover:bg-paper/10 transition-colors"
+                >
+                  <IconMore className="w-5 h-5" />
+                </button>
 
-                <span className="text-[10px] font-semibold tracking-[0.12em] text-[#E3CC83]">
-                  VIP REFLECTION
-                </span>
+                {/* Swap / sidebar ON-OFF */}
+                <button
+                  type="button"
+                  title="Toggle sidebar"
+                  aria-label="Toggle sidebar"
+                  onClick={() =>
+                    setSidebarOpen(
+                      (value) => !value
+                    )
+                  }
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-paper/55 hover:text-paper hover:bg-paper/10 transition-colors"
+                >
+                  <IconSwap className="w-[18px] h-[18px]" />
+                </button>
+
               </div>
             </div>
           </div>
 
-          {/* NEW REFLECTION */}
-          <div className="px-5 pb-4">
+          {/* New reflection */}
+          <div className="px-5 pb-5">
             <button
-              onClick={
-                startNewReflection
-              }
-              className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent/90 text-white rounded-xl py-3 text-sm font-semibold shadow-lg transition-all active:scale-[0.98]"
+              onClick={startNewReflection}
+              className="w-full flex items-center justify-center gap-2 border border-paper/25 text-paper/90 rounded-lg py-2.5 text-sm font-medium hover:bg-paper/10 hover:border-paper/40 transition-colors"
             >
-              <IconPlus className="w-4 h-4" />
+              <IconPlus className="w-3.5 h-3.5" />
               New reflection
             </button>
           </div>
 
-          {/* CONVERSATIONS TITLE */}
-          <div className="px-6 pb-2 flex items-center justify-between">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-paper/35 font-semibold">
-              Your reflections
+          <div className="px-6 pb-3">
+            <p className="text-xs text-paper/35">
+              Reflections · {conversations.length}
             </p>
-
-            <span className="text-[10px] text-paper/35">
-              {conversations.length}
-            </span>
           </div>
 
-          {/* CONVERSATIONS */}
-          <div className="flex-1 overflow-y-auto px-4 pb-4">
+          {/* Conversations */}
+          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
 
             {conversations.length === 0 && (
-              <div className="text-center mt-8 px-5">
-
-                <div className="w-11 h-11 mx-auto rounded-full bg-white/5 flex items-center justify-center mb-3">
-                  <IconMessage className="w-5 h-5 text-paper/25" />
-                </div>
-
-                <p className="text-xs text-paper/35 leading-relaxed">
-                  Your reflections will appear here.
-                </p>
-              </div>
+              <p className="text-[12px] text-paper/30 text-center mt-10 px-2 leading-relaxed">
+                No reflections yet
+              </p>
             )}
 
-            <div className="space-y-1">
+            {conversations.map(
+              (conv) => {
+                const isActive =
+                  conv.id ===
+                  currentConversationId
 
-              {conversations.map(
-                (conv) => {
-                  const isActive =
-                    conv.id ===
-                    currentConversationId
+                return (
+                  <div
+                    key={conv.id}
+                    onClick={() =>
+                      openConversation(
+                        conv.id
+                      )
+                    }
+                    className={`group relative flex items-start justify-between pl-4 pr-3 py-3 rounded-lg cursor-pointer transition-colors ${
+                      isActive
+                        ? 'bg-paper/10'
+                        : 'hover:bg-paper/[0.06]'
+                    }`}
+                  >
 
-                  return (
-                    <div
-                      key={conv.id}
-                      onClick={() =>
-                        openConversation(
-                          conv.id
+                    {isActive && (
+                      <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-accent" />
+                    )}
+
+                    <div className="min-w-0 flex-1">
+
+                      <p
+                        className={`text-[13px] truncate leading-snug ${
+                          isActive
+                            ? 'text-paper'
+                            : 'text-paper/85'
+                        }`}
+                      >
+                        {conv.title}
+                      </p>
+
+                      <p className="text-[11px] text-paper/35 mt-1">
+                        {timeAgo(
+                          conv.created_at
+                        )}
+                      </p>
+
+                    </div>
+
+                    <button
+                      onClick={(e) =>
+                        deleteConversation(
+                          conv.id,
+                          e
                         )
                       }
-                      className={`
-                        group relative flex items-center gap-3
-                        px-3.5 py-2.5 rounded-xl cursor-pointer
-                        transition-all
-                        ${
-                          isActive
-                            ? 'bg-white/10'
-                            : 'hover:bg-white/[0.06]'
-                        }
-                      `}
+                      className="opacity-0 group-hover:opacity-100 text-paper/30 hover:text-alert ml-2 mt-0.5 transition-opacity shrink-0"
                     >
+                      <IconTrash className="w-3.5 h-3.5" />
+                    </button>
 
-                      {isActive && (
-                        <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full bg-accent" />
-                      )}
-
-                      <div
-                        className={`
-                          w-8 h-8 rounded-lg flex items-center
-                          justify-center shrink-0
-                          ${
-                            isActive
-                              ? 'bg-accent/20 text-accent'
-                              : 'bg-white/5 text-paper/35'
-                          }
-                        `}
-                      >
-                        <IconMessage className="w-4 h-4" />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-
-                        <p
-                          className={`
-                            text-[13px] truncate leading-snug
-                            ${
-                              isActive
-                                ? 'text-paper font-medium'
-                                : 'text-paper/75'
-                            }
-                          `}
-                        >
-                          {conv.title}
-                        </p>
-
-                        <p className="text-[10px] text-paper/30 mt-0.5">
-                          {timeAgo(
-                            conv.created_at
-                          )}
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={(e) =>
-                          deleteConversation(
-                            conv.id,
-                            e
-                          )
-                        }
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-paper/25 hover:text-alert hover:bg-alert/10 transition-all"
-                        title="Delete reflection"
-                      >
-                        <IconTrash className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )
-                }
-              )}
-            </div>
+                  </div>
+                )
+              }
+            )}
           </div>
 
-          {/* SIDEBAR FOOTER */}
-          <div className="px-5 py-4 border-t border-paper/10">
+          {/* Sidebar footer */}
+          <div className="px-6 py-5 border-t border-paper/10 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
 
-            <div className="flex items-start gap-2.5">
-
-              <div className="mt-0.5 w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                <IconHeart className="w-3.5 h-3.5 text-accent" />
-              </div>
-
-              <p className="text-[10px] text-paper/35 leading-relaxed">
-                Your journal stays focused on your own words and reflections.
-              </p>
-
-            </div>
+            <p className="text-[11px] text-paper/40 leading-tight">
+              Reflections stay grounded in your own words
+            </p>
           </div>
+
         </div>
-      </aside>
+      </div>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col h-screen min-w-0 transition-all duration-300">
+      {/* ─────────────────────────────────────
+          MAIN CONTENT
+      ───────────────────────────────────── */}
+      <div className="flex-1 flex flex-col h-screen min-w-0">
 
-        {/* TOP HEADER */}
-        <header className="flex items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5 border-b border-paperLine shrink-0 bg-white/70 backdrop-blur-xl">
+        {/* Top bar */}
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-8 py-4 border-b border-paperLine shrink-0 bg-white/40">
 
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
 
-            {/* SIDEBAR TOGGLE */}
+            {/* Main sidebar toggle */}
             <button
-              onClick={toggleSidebar}
-              className="p-2.5 rounded-xl text-inkSoft hover:text-ink hover:bg-paperLine/60 transition shrink-0"
+              onClick={() =>
+                setSidebarOpen(
+                  (value) => !value
+                )
+              }
+              className="text-inkSoft hover:text-ink transition-colors p-2 -ml-2 rounded-lg hover:bg-paperLine/60 shrink-0"
               title={
                 sidebarOpen
                   ? 'Close sidebar'
@@ -1044,26 +1037,20 @@ function App() {
               <IconMenu className="w-5 h-5" />
             </button>
 
-            <div className="w-px h-6 bg-paperLine hidden sm:block" />
+            <div className="w-px h-6 bg-paperLine shrink-0" />
 
-            {/* WRITE / REFLECT */}
-            <div className="flex items-center bg-paperLine/50 rounded-full p-1 border border-paperLine/70">
+            {/* Tabs */}
+            <div className="flex items-center bg-paperLine/40 rounded-full p-1">
 
               <button
                 onClick={() =>
                   setActiveTab('write')
                 }
-                className={`
-                  flex items-center gap-1.5
-                  px-3 sm:px-4 py-1.5
-                  rounded-full text-xs font-semibold
-                  transition-all
-                  ${
-                    activeTab === 'write'
-                      ? 'bg-white text-ink shadow-sm'
-                      : 'text-inkSoft hover:text-ink'
-                  }
-                `}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  activeTab === 'write'
+                    ? 'bg-white text-ink shadow-sm'
+                    : 'text-inkSoft hover:text-ink'
+                }`}
               >
                 <IconPen className="w-3.5 h-3.5" />
                 Write
@@ -1073,186 +1060,169 @@ function App() {
                 onClick={() =>
                   setActiveTab('reflect')
                 }
-                className={`
-                  flex items-center gap-1.5
-                  px-3 sm:px-4 py-1.5
-                  rounded-full text-xs font-semibold
-                  transition-all
-                  ${
-                    activeTab === 'reflect'
-                      ? 'bg-white text-ink shadow-sm'
-                      : 'text-inkSoft hover:text-ink'
-                  }
-                `}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  activeTab === 'reflect'
+                    ? 'bg-white text-ink shadow-sm'
+                    : 'text-inkSoft hover:text-ink'
+                }`}
               >
                 <IconCompass className="w-3.5 h-3.5" />
                 Reflect
               </button>
+
             </div>
           </div>
 
-          {/* ENTRY COUNT */}
-          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-inkSoft bg-paperLine/50 px-2.5 sm:px-3 py-1.5 rounded-full border border-paperLine/60 shrink-0">
-            <IconBook className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2 shrink-0">
 
-            <span>
+            <div className="flex items-center gap-1.5 text-[12px] text-inkSoft bg-paperLine/40 px-3 py-1.5 rounded-full">
+              <IconBook className="w-3 h-3" />
               {entryCount}{' '}
               {entryCount === 1
                 ? 'entry'
-                : 'entries'}
-            </span>
+                : 'entries'}{' '}
+              this session
+            </div>
+
           </div>
-        </header>
+        </div>
 
-        {/* PAGE */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-5 lg:px-8 py-3 sm:py-4 lg:py-5">
+        {/* Main scroll area */}
+        <div className="flex-1 overflow-y-auto flex flex-col items-center px-4 sm:px-6 py-10">
 
-          <div className="w-full max-w-3xl mx-auto">
+          <div className="w-full max-w-2xl">
 
-            {/* ================= WRITE ================= */}
+            {/* ─────────────────────────────
+                WRITE TAB
+            ───────────────────────────── */}
             {activeTab === 'write' && (
-              <section className="bg-white/80 border border-paperLine rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden">
+              <div className="bg-white/70 border border-paperLine rounded-xl shadow-[0_1px_2px_rgba(35,40,33,0.04)] p-7">
 
-                <div className="p-4 sm:p-5 pb-3">
+                <div className="flex items-start gap-2.5 mb-6">
 
-                  <div className="flex items-start gap-3">
-
-                    <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shrink-0 shadow-md">
-                      <IconSparkles className="w-5 h-5 text-white" />
-                    </div>
-
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-accent mb-1">
-                        Daily reflection
-                      </p>
-
-                      <h2 className="font-display text-2xl sm:text-3xl text-ink leading-tight">
-                        How are you feeling today?
-                      </h2>
-
-                      <p className="text-sm text-inkSoft mt-1.5 leading-relaxed">
-                        Take a moment for yourself. There are no right or wrong words here.
-                      </p>
-                    </div>
+                  <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center shrink-0">
+                    <IconCompass className="w-4 h-4 text-white" />
                   </div>
+
+                  <div className="bg-accent/10 border border-accent/15 rounded-2xl rounded-tl-md px-4 py-3 max-w-[85%]">
+
+                    <p className="text-[15px] text-ink leading-relaxed">
+                      Hey! How are you feeling today? Pick a mood, then type or tap the mic to speak your entry 🙂
+                    </p>
+
+                  </div>
+
                 </div>
 
-                {/* MOODS */}
-                <div className="px-5 sm:px-7 pb-3">
+                {/* Mood buttons */}
+                <div className="flex flex-wrap gap-2 mb-6 pl-[42px]">
 
-                  <p className="text-xs font-semibold text-inkSoft mb-2">
-                    Pick a mood
-                  </p>
+                  {MOODS.map((m) => {
 
-                  <div className="flex flex-wrap gap-2">
+                    const isSelected =
+                      selectedMood ===
+                      m.label
 
-                    {MOODS.map(
-                      (mood) => {
-                        const selected =
-                          selectedMood ===
-                          mood.label
-
-                        return (
-                          <button
-                            key={
-                              mood.label
-                            }
-                            onClick={() =>
-                              setSelectedMood(
-                                selected
-                                  ? null
-                                  : mood.label
-                              )
-                            }
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all active:scale-95"
-                            style={{
-                              backgroundColor:
-                                selected
-                                  ? mood.color
-                                  : `${mood.color}12`,
-                              color:
-                                selected
-                                  ? '#fff'
-                                  : mood.color,
-                              borderColor:
-                                selected
-                                  ? mood.color
-                                  : `${mood.color}20`
-                            }}
-                          >
-                            <span>
-                              {
-                                mood.emoji
+                    return (
+                      <button
+                        key={m.label}
+                        onClick={() =>
+                          setSelectedMood(
+                            isSelected
+                              ? null
+                              : m.label
+                          )
+                        }
+                        className="flex items-center gap-2 px-3.5 py-2 rounded-full text-sm border border-transparent transition-all"
+                        style={
+                          isSelected
+                            ? {
+                                backgroundColor:
+                                  m.color,
+                                color: '#fff',
                               }
-                            </span>
+                            : {
+                                backgroundColor:
+                                  `${m.color}14`,
+                                color:
+                                  m.color,
+                              }
+                        }
+                      >
 
-                            {
-                              mood.label
-                            }
-                          </button>
-                        )
-                      }
-                    )}
-                  </div>
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{
+                            backgroundColor:
+                              isSelected
+                                ? 'rgba(255,255,255,0.9)'
+                                : m.color,
+                          }}
+                        />
+
+                        {m.label}
+
+                      </button>
+                    )
+                  })}
+
                 </div>
 
-                {/* ENTRY INPUT */}
-                <div className="px-5 sm:px-7">
+                {/* Entry textarea */}
+                <div className="relative">
 
-                  <div className="relative">
+                  <textarea
+                    ref={entryTextareaRef}
+                    value={entryText}
+                    onChange={(e) =>
+                      setEntryText(
+                        e.target.value
+                      )
+                    }
+                    placeholder="Type your thoughts here... no one else reads this except you, through your own reflections."
+                    rows={6}
+                    className="w-full resize-none bg-paper border border-paperLine rounded-2xl pl-4 pr-14 py-3.5 text-[15px] text-ink placeholder:text-inkSoft/50 focus:outline-none focus:border-accent/60 focus:ring-2 focus:ring-accent/15 transition-shadow leading-relaxed min-h-[160px] max-h-[320px]"
+                  />
 
-                    <textarea
-                      ref={
-                        entryTextareaRef
-                      }
-                      value={entryText}
-                      onChange={(e) =>
-                        setEntryText(
-                          e.target.value
-                        )
-                      }
-                      placeholder="Write whatever is on your mind..."
-                      rows={4}
-                      className="w-full resize-none bg-paper border border-paperLine rounded-2xl pl-4 pr-14 py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none focus:border-accent/60 focus:ring-4 focus:ring-accent/10 transition-all leading-relaxed min-h-[120px] max-h-[220px]"
-                    />
+                  <MicButton
+                    isListening={
+                      entryVoice.isListening
+                    }
+                    isSupported={
+                      entryVoice.isSupported
+                    }
+                    onClick={() =>
+                      entryVoice.toggle(
+                        entryText
+                      )
+                    }
+                    className="absolute right-2.5 bottom-2.5"
+                  />
 
-                    <MicButton
-                      isListening={
-                        entryVoice.isListening
-                      }
-                      isSupported={
-                        entryVoice.isSupported
-                      }
-                      onClick={() =>
-                        entryVoice.toggle(
-                          entryText
-                        )
-                      }
-                      className="absolute right-3 bottom-3"
-                    />
-                  </div>
-
-                  {entryVoice.isListening && (
-                    <div className="flex items-center gap-2 text-xs text-alert mt-1.5">
-                      <span className="w-2 h-2 rounded-full bg-alert animate-pulse" />
-                      Listening... speak naturally
-                    </div>
-                  )}
                 </div>
 
-                {/* SAVE */}
-                <div className="px-5 sm:px-7 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                {entryVoice.isListening && (
+                  <p className="text-[12px] text-alert mt-2 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-alert animate-pulse" />
+                    Listening — tap the mic again when you're done
+                  </p>
+                )}
 
-                  <div className="min-h-5">
+                {/* Save */}
+                <div className="flex items-center justify-between mt-4">
+
+                  <div className="text-[12px] text-inkSoft/70 h-5 flex items-center gap-1.5">
 
                     {saveConfirmation && (
-                      <div className="flex items-center gap-1.5 text-xs text-accent">
-                        <IconCheck className="w-4 h-4" />
-                        {
-                          saveConfirmation
-                        }
-                      </div>
+                      <>
+                        <IconCheck className="w-3.5 h-3.5 text-accent" />
+
+                        <span className="text-accent">
+                          {saveConfirmation}
+                        </span>
+                      </>
                     )}
+
                   </div>
 
                   <button
@@ -1263,326 +1233,208 @@ function App() {
                       isSavingEntry ||
                       !entryText.trim()
                     }
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-ink hover:bg-accent text-paper px-6 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-25 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm"
+                    className="flex items-center gap-2 bg-accent text-white px-5 py-2.5 rounded-full text-sm font-medium disabled:opacity-30 hover:bg-accent/90 transition-colors shadow-sm"
                   >
+
                     {isSavingEntry ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Saving...
-                      </>
+                      <span className="block w-[14px] h-[14px] border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
-                      <>
-                        <IconArrowUp className="w-4 h-4" />
-                        Save my entry
-                      </>
+                      <IconArrowUp className="w-[14px] h-[14px]" />
                     )}
+
+                    Save entry
                   </button>
+
                 </div>
 
-                {/* RECENT */}
-                {recentEntries.length >
-                  0 && (
-                    <div className="px-5 sm:px-7 pb-4 pt-1 border-t border-paperLine">
+                {/* Recent entries */}
+                {recentEntries.length > 0 && (
+                  <div className="mt-6 pt-5 border-t border-paperLine">
 
-                      <p className="text-[11px] uppercase tracking-[0.12em] font-semibold text-inkSoft/60 mb-2">
-                        Saved recently
-                      </p>
+                    <p className="text-[12px] text-inkSoft/60 mb-3">
+                      Saved this session
+                    </p>
 
-                      <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
 
-                        {recentEntries.map(
-                          (
-                            entry,
-                            index
-                          ) => {
-                            const mood =
-                              MOODS.find(
-                                (m) =>
-                                  m.label ===
-                                  entry.mood
-                              )
+                      {recentEntries.map(
+                        (e, i) => {
 
-                            const moodColor =
-                              mood?.color ||
-                              '#9A9690'
+                          const moodColor =
+                            MOODS.find(
+                              (m) =>
+                                m.label ===
+                                e.mood
+                            )?.color ||
+                            '#9A9690'
 
-                            return (
+                          return (
+                            <span
+                              key={i}
+                              className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-full"
+                              style={{
+                                backgroundColor:
+                                  `${moodColor}14`,
+                                color:
+                                  moodColor,
+                              }}
+                            >
+
                               <span
-                                key={
-                                  index
-                                }
-                                className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-full"
+                                className="w-1.5 h-1.5 rounded-full shrink-0"
                                 style={{
-                                  backgroundColor: `${moodColor}12`,
-                                  color:
-                                    moodColor
+                                  backgroundColor:
+                                    moodColor,
                                 }}
-                              >
-                                <span>
-                                  {mood?.emoji ||
-                                    '📝'}
-                                </span>
+                              />
 
-                                {entry.label?.replace(
-                                  'Entry — ',
-                                  ''
-                                )}
-                              </span>
-                            )
-                          }
-                        )}
-                      </div>
+                              {e.label.replace(
+                                'Entry — ',
+                                ''
+                              )}
+
+                            </span>
+                          )
+                        }
+                      )}
+
                     </div>
-                  )}
+                  </div>
+                )}
 
-                <div className="px-5 sm:px-7 pb-4 text-center">
+                <p className="text-[11px] text-inkSoft/40 text-center mt-6">
+                  MindLog offers reflection, not therapy — please reach out to a professional if you need support
+                </p>
 
-                  <p className="text-[10px] text-inkSoft/40 leading-relaxed">
-                    🔒 Your reflection is your private space. MindLog is designed for reflection, not therapy.
-                  </p>
-                </div>
-              </section>
+              </div>
             )}
 
-            {/* ================= REFLECT ================= */}
+            {/* ─────────────────────────────
+                REFLECT TAB
+            ───────────────────────────── */}
             {activeTab === 'reflect' && (
-              <section className="bg-white/80 border border-paperLine rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden">
+              <div className="bg-white/70 border border-paperLine rounded-xl shadow-[0_1px_2px_rgba(35,40,33,0.04)] flex flex-col">
 
+                {/* Messages */}
                 <div
                   className={
                     hasMessages
-                      ? 'max-h-[calc(100vh-205px)] min-h-[350px] overflow-y-auto px-4 sm:px-6 pt-4 sm:pt-5 pb-5 space-y-4'
-                      : 'min-h-[380px] flex items-center justify-center px-5'
+                      ? 'max-h-[58vh] overflow-y-auto px-5 pt-6 pb-5 space-y-4'
+                      : 'h-[360px] flex items-center justify-center px-6'
                   }
                 >
 
-                  {/* LOADING */}
                   {isLoadingConvo && (
-                    <div className="flex flex-col items-center justify-center text-center">
-
-                      <div className="w-10 h-10 rounded-full border-2 border-accent/20 border-t-accent animate-spin mb-3" />
-
-                      <p className="text-sm text-inkSoft">
-                        Opening your reflection...
-                      </p>
-                    </div>
+                    <p className="text-xs text-inkSoft">
+                      Loading reflection…
+                    </p>
                   )}
 
-                  {/* EMPTY CHAT */}
                   {!isLoadingConvo &&
                     messages.length === 0 && (
-                      <div className="w-full flex flex-col items-center text-center">
+                      <div className="flex flex-col items-center text-center">
 
-                        <div className="relative w-14 h-14 rounded-2xl bg-accent flex items-center justify-center shadow-lg shadow-accent/20 mb-4">
-
-                          <IconSparkles className="w-6 h-6 text-white" />
-
-                          <span className="absolute -right-1 -top-1 w-5 h-5 rounded-full bg-[#D8B95C] border-2 border-white" />
+                        <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center mb-5">
+                          <IconCompass className="w-5 h-5 text-white" />
                         </div>
 
-                        <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-accent mb-1.5">
-                          Your personal reflection
+                        <p className="text-[13px] text-accent/70 mb-3">
+                          Ask me anything about your journal
                         </p>
 
-                        <h2 className="font-display text-2xl sm:text-3xl text-ink mb-1.5">
+                        <p className="font-display text-2xl text-ink mb-2">
                           Ask your journal anything
-                        </h2>
-
-                        <p className="text-sm text-inkSoft max-w-md leading-relaxed">
-                          I can help you explore patterns, feelings, memories and thoughts from your own journal.
                         </p>
 
-                        <div className="w-full max-w-xl mt-5">
+                        <p className="text-sm text-inkSoft max-w-sm leading-relaxed">
+                          Try "How have I been feeling this week?" or tap the mic and just ask.
+                        </p>
 
-                          <p className="text-[11px] font-semibold text-inkSoft mb-2">
-                            Try asking
-                          </p>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-
-                            {quickQuestions
-                              .slice(
-                                0,
-                                4
-                              )
-                              .map(
-                                (
-                                  question
-                                ) => (
-                                  <button
-                                    key={
-                                      question
-                                    }
-                                    onClick={() =>
-                                      askQuickQuestion(
-                                        question
-                                      )
-                                    }
-                                    className="text-left px-4 py-2.5 rounded-xl border border-paperLine bg-paper/50 hover:bg-accent/5 hover:border-accent/30 text-xs text-inkSoft hover:text-ink transition-all"
-                                  >
-                                    {
-                                      question
-                                    }
-                                  </button>
-                                )
-                              )}
-                          </div>
-                        </div>
                       </div>
                     )}
 
-                  {/* MESSAGES */}
                   {hasMessages &&
                     messages.map(
-                      (
-                        msg,
-                        index
-                      ) => {
+                      (msg, i) => (
+                        <div
+                          key={i}
+                          className={`flex ${
+                            msg.role ===
+                            'user'
+                              ? 'justify-end'
+                              : 'justify-start gap-2.5'
+                          }`}
+                        >
 
-                        if (
-                          msg.role ===
-                          'system'
-                        ) {
-                          return (
-                            <div
-                              key={
-                                index
-                              }
-                              className="text-center text-[11px] text-inkSoft italic"
-                            >
-                              {
-                                msg.content
-                              }
+                          {msg.role ===
+                          'system' ? (
+                            <div className="text-[11px] text-inkSoft italic px-1">
+                              {msg.content}
                             </div>
-                          )
-                        }
+                          ) : msg.role ===
+                            'user' ? (
+                            <div className="max-w-[75%] bg-ink text-paper rounded-2xl rounded-br-md px-4 py-2.5">
 
-                        if (
-                          msg.role ===
-                          'user'
-                        ) {
-                          return (
-                            <div
-                              key={
-                                index
-                              }
-                              className="flex justify-end"
-                            >
-                              <div className="max-w-[88%] sm:max-w-[75%]">
+                              <p className="whitespace-pre-wrap leading-relaxed text-sm">
+                                {msg.content}
+                              </p>
 
-                                <div className="bg-ink text-paper rounded-2xl rounded-br-md px-4 py-3 shadow-sm">
-                                  <p className="whitespace-pre-wrap leading-relaxed text-sm">
-                                    {
-                                      msg.content
-                                    }
-                                  </p>
+                            </div>
+                          ) : (
+                            msg.content !==
+                              '' && (
+                              <>
+                                <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center shrink-0 mt-0.5">
+                                  <IconCompass className="w-3.5 h-3.5 text-white" />
                                 </div>
 
-                                <p className="text-[9px] text-inkSoft/35 text-right mt-1 mr-1">
-                                  You
-                                </p>
-                              </div>
-                            </div>
-                          )
-                        }
-
-                        if (
-                          msg.role ===
-                            'assistant' &&
-                          msg.content !==
-                            ''
-                        ) {
-                          return (
-                            <div
-                              key={
-                                index
-                              }
-                              className="flex justify-start gap-2.5"
-                            >
-
-                              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                                <IconSparkles className="w-4 h-4 text-white" />
-                              </div>
-
-                              <div className="max-w-[88%] sm:max-w-[78%]">
-
-                                <div className="bg-accent/8 border border-accent/15 rounded-2xl rounded-bl-md px-4 py-3">
+                                <div className="max-w-[75%] bg-accent/10 border border-accent/15 rounded-2xl rounded-bl-md px-4 py-3">
 
                                   <p className="whitespace-pre-wrap leading-relaxed text-[15px] text-ink">
-                                    {
-                                      msg.content
-                                    }
+                                    {msg.content}
                                   </p>
+
                                 </div>
+                              </>
+                            )
+                          )}
 
-                                <p className="text-[9px] text-inkSoft/35 mt-1 ml-1">
-                                  MindLog AI
-                                </p>
-                              </div>
-                            </div>
-                          )
-                        }
-
-                        return null
-                      }
+                        </div>
+                      )
                     )}
 
-                  {/* TYPING */}
+                  {/* Typing indicator */}
                   {showTypingIndicator && (
                     <div className="flex justify-start gap-2.5">
 
-                      <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                        <IconSparkles className="w-4 h-4 text-white" />
+                      <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center shrink-0">
+                        <IconCompass className="w-3.5 h-3.5 text-white" />
                       </div>
 
-                      <div className="flex items-center gap-1.5 bg-accent/8 border border-accent/15 rounded-2xl rounded-bl-md px-4 py-3">
+                      <div className="flex items-center gap-1.5 bg-accent/10 border border-accent/15 rounded-2xl rounded-bl-md px-4 py-3">
 
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
 
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse [animation-delay:150ms]" />
 
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse [animation-delay:300ms]" />
+
                       </div>
+
                     </div>
                   )}
 
                   <div ref={chatEndRef} />
+
                 </div>
 
-                {/* CHAT INPUT */}
-                <div className="border-t border-paperLine p-3 sm:p-3.5 bg-paper/50">
+                {/* Chatbox */}
+                <div className="border-t border-paperLine p-4 bg-paper/40 rounded-b-xl">
 
-                  {hasMessages && (
-                    <div className="flex gap-2 overflow-x-auto pb-2 mb-1">
-
-                      {quickQuestions.map(
-                        (question) => (
-                          <button
-                            key={
-                              question
-                            }
-                            onClick={() =>
-                              askQuickQuestion(
-                                question
-                              )
-                            }
-                            className="shrink-0 px-3 py-1.5 rounded-full bg-white border border-paperLine text-[10px] text-inkSoft hover:text-accent hover:border-accent/30 transition"
-                          >
-                            {
-                              question
-                            }
-                          </button>
-                        )
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex items-end gap-1 bg-white border border-paperLine rounded-2xl px-2 py-1.5 shadow-sm focus-within:border-accent/60 focus-within:ring-4 focus-within:ring-accent/10 transition-all">
+                  <div className="flex items-end gap-1 bg-white border border-paperLine rounded-2xl px-2 py-2 shadow-sm focus-within:border-accent/60 focus-within:ring-2 focus-within:ring-accent/15 transition-shadow">
 
                     <textarea
-                      ref={
-                        textareaRef
-                      }
+                      ref={textareaRef}
                       value={input}
                       onChange={(e) =>
                         setInput(
@@ -1592,11 +1444,12 @@ function App() {
                       onKeyDown={
                         handleKeyDown
                       }
-                      placeholder="Ask something about your journal..."
+                      placeholder="Ask a question about your journal…"
                       rows={1}
-                      className="flex-1 resize-none bg-transparent px-2.5 py-2 text-sm text-ink placeholder:text-inkSoft/45 focus:outline-none max-h-[140px] leading-relaxed"
+                      className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-ink placeholder:text-inkSoft/50 focus:outline-none max-h-[160px] leading-relaxed"
                     />
 
+                    {/* Speaker / microphone stays INSIDE chatbox */}
                     <MicButton
                       isListening={
                         questionVoice.isListening
@@ -1612,44 +1465,38 @@ function App() {
                     />
 
                     <button
-                      onClick={
-                        handleAsk
-                      }
+                      onClick={handleAsk}
                       disabled={
                         isAsking ||
                         !input.trim()
                       }
-                      className="shrink-0 bg-ink text-paper w-10 h-10 flex items-center justify-center rounded-xl disabled:opacity-20 hover:bg-accent transition-all active:scale-95"
-                      title="Ask MindLog"
-                      aria-label="Send question"
+                      className="shrink-0 bg-ink text-paper p-2.5 rounded-full disabled:opacity-25 hover:bg-accent transition-colors"
+                      title="Ask"
                     >
                       <IconArrowUp className="w-4 h-4" />
                     </button>
+
                   </div>
 
                   {questionVoice.isListening && (
-                    <div className="flex items-center justify-center gap-1.5 text-[11px] text-alert mt-1.5">
-
+                    <p className="text-[12px] text-alert mt-2 flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-alert animate-pulse" />
-
-                      Listening...
-                    </div>
+                      Listening…
+                    </p>
                   )}
 
-                  <div className="flex items-center justify-center gap-1.5 text-[9px] sm:text-[10px] text-inkSoft/40 mt-2">
+                  <p className="text-[11px] text-inkSoft/40 text-center mt-2.5">
+                    Answers are grounded strictly in your own journal entries
+                  </p>
 
-                    <IconSparkles className="w-3 h-3" />
-
-                    <span>
-                      Answers are based on your own journal entries
-                    </span>
-                  </div>
                 </div>
-              </section>
+
+              </div>
             )}
+
           </div>
         </div>
-      </main>
+      </div>
     </div>
   )
 }
