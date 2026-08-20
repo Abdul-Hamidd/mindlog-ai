@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 
-const API_URL = 'https://mindlog-backend.fastapicloud.dev/'
+const API_URL = 'https://mindlog-backend.fastapicloud.dev'
 
 function getUserId() {
   let userId = localStorage.getItem('mindlog_user_id')
