@@ -1305,7 +1305,7 @@ function App() {
           ? `${appHeight}px`
           : '100vh'
       }}
-      className="bg-paper flex font-sans overflow-hidden text-ink"
+      className="bg-gradient-to-br from-[#FAFDF8] via-[#F2F8F3] to-[#E9F4EC] flex font-sans overflow-hidden text-ink"
     >
 
       {/* MOBILE BACKDROP */}
@@ -1352,7 +1352,7 @@ function App() {
           <div className="px-6 pt-6 pb-4">
             <div className="flex items-center">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shadow-lg">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-emerald-500 flex items-center justify-center shadow-lg">
                   <IconCompass className="w-5 h-5 text-white" />
                 </div>
 
@@ -1377,7 +1377,7 @@ function App() {
               onClick={
                 startNewReflection
               }
-              className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent/90 text-white rounded-xl py-3 text-sm font-semibold shadow-lg transition-all active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-accent to-emerald-600 hover:opacity-90 text-white rounded-xl py-3 text-sm font-semibold shadow-lg transition-all active:scale-[0.98]"
             >
               <IconPlus className="w-4 h-4" />
               New reflection
@@ -1501,7 +1501,7 @@ function App() {
           </div>
 
           {/* SIDEBAR FOOTER */}
-          <div className="px-5 py-4 border-t border-paper/10">
+          <div className="px-5 py-4 border-t border-accent/20">
             <div className="flex items-start gap-2.5">
               <div className="mt-0.5 w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                 <IconHeart className="w-3.5 h-3.5 text-accent" />
@@ -1519,7 +1519,7 @@ function App() {
       <main className="flex-1 flex flex-col h-full min-w-0 transition-all duration-300">
 
         {/* TOP HEADER */}
-        <header className="flex items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5 border-b border-paperLine shrink-0 bg-white/70 backdrop-blur-xl">
+        <header className="flex items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5 border-b border-accent/15 shrink-0 bg-gradient-to-r from-white/80 via-accent/5 to-white/80 backdrop-blur-xl">
 
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
 
@@ -1634,12 +1634,12 @@ function App() {
             {/* ================= ENTRIES ================= */}
             {activeTab ===
               'write' && (
-              <section className="bg-white/80 border border-paperLine rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden">
+              <section className="bg-white/85 border border-paperLine border-t-4 border-t-accent rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden">
 
                 <div className="p-4 sm:p-5 pb-3">
                   <div className="flex items-start gap-3">
 
-                    <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shrink-0 shadow-md">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-emerald-600 flex items-center justify-center shrink-0 shadow-md">
                       <IconSparkles className="w-5 h-5 text-white" />
                     </div>
 
@@ -1717,7 +1717,7 @@ function App() {
                 </div>
 
                 {/* ENTRY INPUT */}
-                <div className="px-5 sm:px-7">
+                <div className="px-5 sm:px-7 mt-4 sm:mt-6">
                   <div className="relative">
 
                     <textarea
@@ -1734,7 +1734,7 @@ function App() {
                       }
                       placeholder="Write whatever is on your mind..."
                       rows={4}
-                      className="w-full resize-none bg-paper border border-paperLine rounded-2xl pl-4 pr-14 py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none focus:border-accent/60 focus:ring-4 focus:ring-accent/10 transition-all leading-relaxed min-h-[120px] max-h-[160px]"
+                      className="w-full resize-none bg-gradient-to-br from-[#F9FCF8] via-[#F1F8F2] to-[#EAF5EE] border border-accent/20 rounded-2xl pl-4 pr-14 py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none focus:border-accent/60 focus:ring-4 focus:ring-accent/10 transition-all leading-relaxed min-h-[120px] max-h-[160px] shadow-[0_5px_20px_rgba(72,117,86,0.08)]"
                     />
 
                     {/* MIC */}
@@ -1786,7 +1786,7 @@ function App() {
                       isSavingEntry ||
                       !entryText.trim()
                     }
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-ink hover:bg-accent text-paper px-6 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-25 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-ink hover:bg-emerald-600 text-paper px-6 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-25 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm"
                   >
                     {isSavingEntry ? (
                       <>
@@ -1868,7 +1868,7 @@ function App() {
             {/* ================= REFLECT ================= */}
             {activeTab ===
               'reflect' && (
-              <section className="bg-white/80 border border-paperLine rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden flex-1 min-h-0 flex flex-col">
+              <section className="bg-white/85 border border-paperLine border-t-4 border-t-emerald-500 rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden flex-1 min-h-0 flex flex-col">
 
                 <div
                   className={
@@ -1895,7 +1895,7 @@ function App() {
                       0 && (
                     <div className="w-full flex flex-col items-center text-center">
 
-                      <div className="relative w-14 h-14 rounded-2xl bg-accent flex items-center justify-center shadow-lg shadow-accent/20 mb-4">
+                      <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-emerald-600 flex items-center justify-center shadow-lg shadow-accent/20 mb-4">
                         <IconSparkles className="w-6 h-6 text-white" />
                         <span className="absolute -right-1 -top-1 w-5 h-5 rounded-full bg-[#D8B95C] border-2 border-white" />
                       </div>
@@ -2019,13 +2019,13 @@ function App() {
                               className="flex justify-start gap-2.5"
                             >
 
-                              <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                              <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
                                 <IconSparkles className="w-4 h-4 text-white" />
                               </div>
 
                               <div className="max-w-[88%] sm:max-w-[78%]">
 
-                                <div className="bg-accent/8 border border-accent/15 rounded-2xl rounded-bl-md px-4 py-3">
+                                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl rounded-bl-md px-4 py-3">
                                   <p className="whitespace-pre-wrap leading-relaxed text-[15px] text-ink">
                                     {
                                       msg.content
@@ -2033,7 +2033,7 @@ function App() {
                                   </p>
                                 </div>
 
-                                <p className="text-[9px] text-inkSoft/35 mt-1 ml-1">
+                                <p className="text-[9px] text-emerald-700/50 mt-1 ml-1">
                                   MindLog AI
                                 </p>
                               </div>
@@ -2049,14 +2049,14 @@ function App() {
                   {showTypingIndicator && (
                     <div className="flex justify-start gap-2.5">
 
-                      <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0">
                         <IconSparkles className="w-4 h-4 text-white" />
                       </div>
 
-                      <div className="flex items-center gap-1.5 bg-accent/8 border border-accent/15 rounded-2xl rounded-bl-md px-4 py-3">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse [animation-delay:150ms]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse [animation-delay:300ms]" />
+                      <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-2xl rounded-bl-md px-4 py-3">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse [animation-delay:150ms]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse [animation-delay:300ms]" />
                       </div>
                     </div>
                   )}
@@ -2141,7 +2141,7 @@ function App() {
                         isAsking ||
                         !input.trim()
                       }
-                      className="absolute right-2 bottom-2 shrink-0 bg-ink text-paper w-10 h-10 flex items-center justify-center rounded-xl disabled:opacity-20 hover:bg-accent transition-all active:scale-95 shadow-sm"
+                      className="absolute right-2 bottom-2 shrink-0 bg-ink text-paper w-10 h-10 flex items-center justify-center rounded-xl disabled:opacity-20 hover:bg-emerald-600 transition-all active:scale-95 shadow-sm"
                       title="Ask MindLog"
                       aria-label="Send question"
                     >
