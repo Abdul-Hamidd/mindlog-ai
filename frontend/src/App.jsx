@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+
 import axios from 'axios'
 
 const API_URL = 'https://mindlog-backend.fastapicloud.dev'
@@ -48,8 +49,8 @@ function sanitizeAnswer(text) {
   if (!text) return text
 
   return text
-    .replace(/\n*based on entries:[\s\S]*$/i, '')
-    .replace(/\(?\s*Entry\s*—[^)]*\)?/gi, '')
+    .replace(/\n\*based on entries:[\s\S]*\*$/i, '')
+    .replace(/\*?\(?\s*Entry\s*—[^)]*\)?\*?/gi, '')
     .trim()
 }
 
@@ -198,7 +199,6 @@ const IconCheck = (props) => (
     <path
       d="M20 6L9 17l-5-5"
       strokeLinecap="round"
-      strokeLinejoin="round"
     />
   </svg>
 )
@@ -420,6 +420,9 @@ function MicButton({
 function App() {
   const [userId] = useState(getUserId)
 
+  // IMPORTANT:
+  // Keep internal value as "write".
+  // "Entries" is only the visible label.
   const [activeTab, setActiveTab] =
     useState('write')
 
@@ -503,7 +506,7 @@ function App() {
         Math.min(
           textareaRef.current
             .scrollHeight,
-          140
+          160
         ) + 'px'
     }
   }, [input])
@@ -517,7 +520,7 @@ function App() {
         Math.min(
           entryTextareaRef.current
             .scrollHeight,
-          220
+          160
         ) + 'px'
     }
   }, [entryText])
@@ -560,6 +563,8 @@ function App() {
       setMessages([])
       setCurrentConversationId(null)
       setInput('')
+
+      // Internal state remains "write"
       setActiveTab('write')
 
       closeSidebarOnMobile()
@@ -568,6 +573,7 @@ function App() {
   const openConversation =
     async (conversationId) => {
       setIsLoadingConvo(true)
+
       setCurrentConversationId(
         conversationId
       )
@@ -806,6 +812,7 @@ function App() {
         input.trim()
 
       setInput('')
+
       setActiveTab('reflect')
 
       const conversationHistory =
@@ -1026,6 +1033,7 @@ function App() {
         )
       } finally {
         setIsAsking(false)
+
         isAskingRef.current =
           false
       }
@@ -1082,6 +1090,7 @@ function App() {
     <div className="min-h-screen bg-paper flex font-sans overflow-hidden text-ink">
 
       {/* MOBILE BACKDROP */}
+
       {sidebarOpen && (
         <div
           onClick={() =>
@@ -1092,6 +1101,7 @@ function App() {
       )}
 
       {/* SIDEBAR */}
+
       <aside
         className={`
           fixed inset-y-0 left-0 z-40
@@ -1113,12 +1123,10 @@ function App() {
         <div className="w-[290px] min-w-[290px] h-full flex flex-col">
 
           {/* SIDEBAR HEADER */}
+
           <div className="px-6 pt-6 pb-4">
-
             <div className="flex items-center">
-
               <div className="flex items-center gap-2">
-
                 <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shadow-lg">
                   <IconCompass className="w-5 h-5 text-white" />
                 </div>
@@ -1132,31 +1140,25 @@ function App() {
                     Your private space
                   </p>
                 </div>
-
               </div>
-
-              {/* CROSS REMOVED */}
             </div>
 
             {/* VIP BADGE */}
+
             <div className="mt-4 flex items-center gap-2">
-
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C9A44C]/20 to-[#E7D49A]/10 border border-[#C9A44C]/30">
-
                 <IconSparkles className="w-3.5 h-3.5 text-[#D8B95C]" />
 
                 <span className="text-[10px] font-semibold tracking-[0.12em] text-[#E3CC83]">
                   VIP REFLECTION
                 </span>
-
               </div>
-
             </div>
           </div>
 
           {/* NEW REFLECTION */}
-          <div className="px-5 pb-4">
 
+          <div className="px-5 pb-4">
             <button
               onClick={
                 startNewReflection
@@ -1166,12 +1168,11 @@ function App() {
               <IconPlus className="w-4 h-4" />
               New reflection
             </button>
-
           </div>
 
           {/* CONVERSATIONS TITLE */}
-          <div className="px-6 pb-2 flex items-center justify-between">
 
+          <div className="px-6 pb-2 flex items-center justify-between">
             <p className="text-[10px] uppercase tracking-[0.16em] text-paper/35 font-semibold">
               Your reflections
             </p>
@@ -1179,16 +1180,14 @@ function App() {
             <span className="text-[10px] text-paper/35">
               {conversations.length}
             </span>
-
           </div>
 
           {/* CONVERSATIONS */}
-          <div className="flex-1 overflow-y-auto px-4 pb-4">
 
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
             {conversations.length ===
               0 && (
               <div className="text-center mt-8 px-5">
-
                 <div className="w-11 h-11 mx-auto rounded-full bg-white/5 flex items-center justify-center mb-3">
                   <IconMessage className="w-5 h-5 text-paper/25" />
                 </div>
@@ -1196,12 +1195,10 @@ function App() {
                 <p className="text-xs text-paper/35 leading-relaxed">
                   Your reflections will appear here.
                 </p>
-
               </div>
             )}
 
             <div className="space-y-1">
-
               {conversations.map(
                 (conv) => {
                   const isActive =
@@ -1229,7 +1226,6 @@ function App() {
                         }
                       `}
                     >
-
                       {isActive && (
                         <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full bg-accent" />
                       )}
@@ -1249,7 +1245,6 @@ function App() {
                       </div>
 
                       <div className="min-w-0 flex-1">
-
                         <p
                           className={`
                             text-[13px] truncate leading-snug
@@ -1270,7 +1265,6 @@ function App() {
                             conv.created_at
                           )}
                         </p>
-
                       </div>
 
                       <button
@@ -1287,20 +1281,17 @@ function App() {
                       >
                         <IconTrash className="w-3.5 h-3.5" />
                       </button>
-
                     </div>
                   )
                 }
               )}
-
             </div>
           </div>
 
           {/* SIDEBAR FOOTER */}
+
           <div className="px-5 py-4 border-t border-paper/10">
-
             <div className="flex items-start gap-2.5">
-
               <div className="mt-0.5 w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
                 <IconHeart className="w-3.5 h-3.5 text-accent" />
               </div>
@@ -1308,22 +1299,23 @@ function App() {
               <p className="text-[10px] text-paper/35 leading-relaxed">
                 Your journal stays focused on your own words and reflections.
               </p>
-
             </div>
           </div>
-
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
+
       <main className="flex-1 flex flex-col h-screen min-w-0 transition-all duration-300">
 
         {/* TOP HEADER */}
+
         <header className="flex items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5 border-b border-paperLine shrink-0 bg-white/70 backdrop-blur-xl">
 
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
 
             {/* SIDEBAR TOGGLE */}
+
             <button
               onClick={
                 toggleSidebar
@@ -1345,7 +1337,8 @@ function App() {
 
             <div className="w-px h-6 bg-paperLine hidden sm:block" />
 
-            {/* WRITE / REFLECT */}
+            {/* ENTRIES / REFLECT */}
+
             <div className="flex items-center bg-paperLine/50 rounded-full p-1 border border-paperLine/70">
 
               <button
@@ -1368,7 +1361,10 @@ function App() {
                 `}
               >
                 <IconPen className="w-3.5 h-3.5" />
-                Write
+
+                {/* ONLY visible text changed from Write to Entries */}
+
+                Entries
               </button>
 
               <button
@@ -1393,13 +1389,12 @@ function App() {
                 <IconCompass className="w-3.5 h-3.5" />
                 Reflect
               </button>
-
             </div>
           </div>
 
           {/* ENTRY COUNT */}
-          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-inkSoft bg-paperLine/50 px-2.5 sm:px-3 py-1.5 rounded-full border border-paperLine/60 shrink-0">
 
+          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-inkSoft bg-paperLine/50 px-2.5 sm:px-3 py-1.5 rounded-full border border-paperLine/60 shrink-0">
             <IconBook className="w-3.5 h-3.5" />
 
             <span>
@@ -1408,33 +1403,29 @@ function App() {
                 ? 'entry'
                 : 'entries'}
             </span>
-
           </div>
-
         </header>
 
         {/* PAGE */}
+
         <div className="flex-1 overflow-y-auto px-3 sm:px-5 lg:px-8 py-3 sm:py-4 lg:py-5">
 
           <div className="w-full max-w-3xl mx-auto">
 
-            {/* ================= WRITE ================= */}
+            {/* ================= ENTRIES ================= */}
+
             {activeTab ===
               'write' && (
               <section className="bg-white/80 border border-paperLine rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden">
 
                 <div className="p-4 sm:p-5 pb-3">
-
                   <div className="flex items-start gap-3">
 
                     <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shrink-0 shadow-md">
-
                       <IconSparkles className="w-5 h-5 text-white" />
-
                     </div>
 
                     <div>
-
                       <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-accent mb-1">
                         Daily reflection
                       </p>
@@ -1446,20 +1437,18 @@ function App() {
                       <p className="text-sm text-inkSoft mt-1.5 leading-relaxed">
                         Take a moment for yourself. There are no right or wrong words here.
                       </p>
-
                     </div>
                   </div>
                 </div>
 
                 {/* MOODS */}
-                <div className="px-5 sm:px-7 pb-3">
 
+                <div className="px-5 sm:px-7 pb-3">
                   <p className="text-xs font-semibold text-inkSoft mb-2">
                     Pick a mood
                   </p>
 
                   <div className="flex flex-wrap gap-2">
-
                     {MOODS.map(
                       (mood) => {
                         const selected =
@@ -1507,13 +1496,12 @@ function App() {
                         )
                       }
                     )}
-
                   </div>
                 </div>
 
                 {/* ENTRY INPUT */}
-                <div className="px-5 sm:px-7">
 
+                <div className="px-5 sm:px-7">
                   <div className="relative">
 
                     <textarea
@@ -1530,12 +1518,12 @@ function App() {
                       }
                       placeholder="Write whatever is on your mind..."
                       rows={4}
-                      className="w-full resize-none bg-paper border border-paperLine rounded-2xl pl-4 pr-14 py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none focus:border-accent/60 focus:ring-4 focus:ring-accent/10 transition-all leading-relaxed min-h-[120px] max-h-[220px]"
+                      className="w-full resize-none bg-paper border border-paperLine rounded-2xl pl-4 pr-14 py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none focus:border-accent/60 focus:ring-4 focus:ring-accent/10 transition-all leading-relaxed min-h-[120px] max-h-[160px]"
                     />
 
-                    {/* MIC INSIDE TEXTAREA */}
-                    <div className="absolute right-2.5 bottom-2.5 z-10">
+                    {/* MIC */}
 
+                    <div className="absolute right-2.5 bottom-2.5 z-10">
                       <MicButton
                         isListening={
                           entryVoice.isListening
@@ -1550,39 +1538,31 @@ function App() {
                         }
                         className="bg-white/80 border border-paperLine/70 shadow-sm hover:bg-white"
                       />
-
                     </div>
                   </div>
 
                   {entryVoice.isListening && (
                     <div className="flex items-center gap-2 text-xs text-alert mt-1.5">
-
                       <span className="w-2 h-2 rounded-full bg-alert animate-pulse" />
-
                       Listening... speak naturally
-
                     </div>
                   )}
-
                 </div>
 
                 {/* SAVE */}
+
                 <div className="px-5 sm:px-7 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
 
                   <div className="min-h-5">
-
                     {saveConfirmation && (
                       <div className="flex items-center gap-1.5 text-xs text-accent">
-
                         <IconCheck className="w-4 h-4" />
 
                         {
                           saveConfirmation
                         }
-
                       </div>
                     )}
-
                   </div>
 
                   <button
@@ -1607,10 +1587,10 @@ function App() {
                       </>
                     )}
                   </button>
-
                 </div>
 
                 {/* RECENT */}
+
                 {recentEntries.length >
                   0 && (
                   <div className="px-5 sm:px-7 pb-4 pt-1 border-t border-paperLine">
@@ -1620,7 +1600,6 @@ function App() {
                     </p>
 
                     <div className="flex flex-wrap gap-2">
-
                       {recentEntries.map(
                         (
                           entry,
@@ -1662,23 +1641,20 @@ function App() {
                           )
                         }
                       )}
-
                     </div>
                   </div>
                 )}
 
                 <div className="px-5 sm:px-7 pb-4 text-center">
-
                   <p className="text-[10px] text-inkSoft/40 leading-relaxed">
                     🔒 Your reflection is your private space. MindLog is designed for reflection, not therapy.
                   </p>
-
                 </div>
-
               </section>
             )}
 
             {/* ================= REFLECT ================= */}
+
             {activeTab ===
               'reflect' && (
               <section className="bg-white/80 border border-paperLine rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden">
@@ -1692,86 +1668,82 @@ function App() {
                 >
 
                   {/* LOADING */}
+
                   {isLoadingConvo && (
                     <div className="flex flex-col items-center justify-center text-center">
-
                       <div className="w-10 h-10 rounded-full border-2 border-accent/20 border-t-accent animate-spin mb-3" />
 
                       <p className="text-sm text-inkSoft">
                         Opening your reflection...
                       </p>
-
                     </div>
                   )}
 
                   {/* EMPTY CHAT */}
+
                   {!isLoadingConvo &&
                     messages.length ===
                       0 && (
-                      <div className="w-full flex flex-col items-center text-center">
+                    <div className="w-full flex flex-col items-center text-center">
 
-                        <div className="relative w-14 h-14 rounded-2xl bg-accent flex items-center justify-center shadow-lg shadow-accent/20 mb-4">
+                      <div className="relative w-14 h-14 rounded-2xl bg-accent flex items-center justify-center shadow-lg shadow-accent/20 mb-4">
+                        <IconSparkles className="w-6 h-6 text-white" />
 
-                          <IconSparkles className="w-6 h-6 text-white" />
-
-                          <span className="absolute -right-1 -top-1 w-5 h-5 rounded-full bg-[#D8B95C] border-2 border-white" />
-
-                        </div>
-
-                        <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-accent mb-1.5">
-                          Your personal reflection
-                        </p>
-
-                        <h2 className="font-display text-2xl sm:text-3xl text-ink mb-1.5">
-                          Ask your journal anything
-                        </h2>
-
-                        <p className="text-sm text-inkSoft max-w-md leading-relaxed">
-                          I can help you explore patterns, feelings, memories and thoughts from your own journal.
-                        </p>
-
-                        <div className="w-full max-w-xl mt-5">
-
-                          <p className="text-[11px] font-semibold text-inkSoft mb-2">
-                            Try asking
-                          </p>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-
-                            {quickQuestions
-                              .slice(
-                                0,
-                                4
-                              )
-                              .map(
-                                (
-                                  question
-                                ) => (
-                                  <button
-                                    key={
-                                      question
-                                    }
-                                    onClick={() =>
-                                      askQuickQuestion(
-                                        question
-                                      )
-                                    }
-                                    className="text-left px-4 py-2.5 rounded-xl border border-paperLine bg-paper/50 hover:bg-accent/5 hover:border-accent/30 text-xs text-inkSoft hover:text-ink transition-all"
-                                  >
-                                    {
-                                      question
-                                    }
-                                  </button>
-                                )
-                              )}
-
-                          </div>
-                        </div>
-
+                        <span className="absolute -right-1 -top-1 w-5 h-5 rounded-full bg-[#D8B95C] border-2 border-white" />
                       </div>
-                    )}
+
+                      <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-accent mb-1.5">
+                        Your personal reflection
+                      </p>
+
+                      <h2 className="font-display text-2xl sm:text-3xl text-ink mb-1.5">
+                        Ask your journal anything
+                      </h2>
+
+                      <p className="text-sm text-inkSoft max-w-md leading-relaxed">
+                        I can help you explore patterns, feelings, memories and thoughts from your own journal.
+                      </p>
+
+                      <div className="w-full max-w-xl mt-5">
+
+                        <p className="text-[11px] font-semibold text-inkSoft mb-2">
+                          Try asking
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {quickQuestions
+                            .slice(
+                              0,
+                              4
+                            )
+                            .map(
+                              (
+                                question
+                              ) => (
+                                <button
+                                  key={
+                                    question
+                                  }
+                                  onClick={() =>
+                                    askQuickQuestion(
+                                      question
+                                    )
+                                  }
+                                  className="text-left px-4 py-2.5 rounded-xl border border-paperLine bg-paper/50 hover:bg-accent/5 hover:border-accent/30 text-xs text-inkSoft hover:text-ink transition-all"
+                                >
+                                  {
+                                    question
+                                  }
+                                </button>
+                              )
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* MESSAGES */}
+
                   {hasMessages &&
                     messages.map(
                       (
@@ -1808,25 +1780,20 @@ function App() {
                               }
                               className="flex justify-end"
                             >
-
                               <div className="max-w-[88%] sm:max-w-[75%]">
 
                                 <div className="bg-ink text-paper rounded-2xl rounded-br-md px-4 py-3 shadow-sm">
-
                                   <p className="whitespace-pre-wrap leading-relaxed text-sm">
                                     {
                                       msg.content
                                     }
                                   </p>
-
                                 </div>
 
                                 <p className="text-[9px] text-inkSoft/35 text-right mt-1 mr-1">
                                   You
                                 </p>
-
                               </div>
-
                             </div>
                           )
                         }
@@ -1846,29 +1813,23 @@ function App() {
                             >
 
                               <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-
                                 <IconSparkles className="w-4 h-4 text-white" />
-
                               </div>
 
                               <div className="max-w-[88%] sm:max-w-[78%]">
 
                                 <div className="bg-accent/8 border border-accent/15 rounded-2xl rounded-bl-md px-4 py-3">
-
                                   <p className="whitespace-pre-wrap leading-relaxed text-[15px] text-ink">
                                     {
                                       msg.content
                                     }
                                   </p>
-
                                 </div>
 
                                 <p className="text-[9px] text-inkSoft/35 mt-1 ml-1">
                                   MindLog AI
                                 </p>
-
                               </div>
-
                             </div>
                           )
                         }
@@ -1878,33 +1839,29 @@ function App() {
                     )}
 
                   {/* TYPING */}
+
                   {showTypingIndicator && (
                     <div className="flex justify-start gap-2.5">
 
                       <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
-
                         <IconSparkles className="w-4 h-4 text-white" />
-
                       </div>
 
                       <div className="flex items-center gap-1.5 bg-accent/8 border border-accent/15 rounded-2xl rounded-bl-md px-4 py-3">
-
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
 
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse [animation-delay:150ms]" />
 
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse [animation-delay:300ms]" />
-
                       </div>
-
                     </div>
                   )}
 
                   <div ref={chatEndRef} />
-
                 </div>
 
                 {/* CHAT INPUT */}
+
                 <div className="border-t border-paperLine p-3 sm:p-3.5 bg-paper/50">
 
                   {hasMessages && (
@@ -1929,11 +1886,11 @@ function App() {
                           </button>
                         )
                       )}
-
                     </div>
                   )}
 
-                  {/* UPDATED CHATBOX */}
+                  {/* CHATBOX */}
+
                   <div className="relative flex items-end gap-1 rounded-2xl px-2 py-2 border border-accent/20 bg-gradient-to-br from-[#F9FCF8] via-[#F1F8F2] to-[#EAF5EE] shadow-[0_5px_20px_rgba(72,117,86,0.08)] focus-within:border-accent/50 focus-within:ring-4 focus-within:ring-accent/10 transition-all">
 
                     <textarea
@@ -1953,12 +1910,12 @@ function App() {
                       }
                       placeholder="Ask something about your journal..."
                       rows={1}
-                      className="flex-1 min-w-0 resize-none bg-transparent px-2.5 py-2 pr-[92px] text-sm text-ink placeholder:text-inkSoft/45 focus:outline-none max-h-[140px] leading-relaxed"
+                      className="flex-1 min-w-0 resize-none bg-transparent px-2.5 py-2 pr-[92px] text-sm text-ink placeholder:text-inkSoft/45 focus:outline-none max-h-[160px] leading-relaxed"
                     />
 
-                    {/* MIC FIXED INSIDE CHATBOX */}
-                    <div className="absolute right-[52px] bottom-[8px] z-10">
+                    {/* MIC */}
 
+                    <div className="absolute right-[52px] bottom-[8px] z-10">
                       <MicButton
                         isListening={
                           questionVoice.isListening
@@ -1973,10 +1930,10 @@ function App() {
                         }
                         className="bg-white/70 border border-accent/10 shadow-sm hover:bg-white"
                       />
-
                     </div>
 
                     {/* SEND BUTTON */}
+
                     <button
                       onClick={
                         handleAsk
@@ -1991,34 +1948,25 @@ function App() {
                     >
                       <IconArrowUp className="w-4 h-4" />
                     </button>
-
                   </div>
 
                   {questionVoice.isListening && (
                     <div className="flex items-center justify-center gap-1.5 text-[11px] text-alert mt-1.5">
-
                       <span className="w-1.5 h-1.5 rounded-full bg-alert animate-pulse" />
-
                       Listening...
-
                     </div>
                   )}
 
                   <div className="flex items-center justify-center gap-1.5 text-[9px] sm:text-[10px] text-inkSoft/40 mt-2">
-
                     <IconSparkles className="w-3 h-3" />
 
                     <span>
                       Answers are based on your own journal entries
                     </span>
-
                   </div>
-
                 </div>
-
               </section>
             )}
-
           </div>
         </div>
       </main>
