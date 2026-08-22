@@ -1996,7 +1996,7 @@ function App() {
                   )}
 
                   {/* CHATBOX */}
-                  <div className="relative flex items-end gap-1 rounded-2xl px-2 py-2 border border-accent/20 bg-gradient-to-br from-[#F9FCF8] via-[#F1F8F2] to-[#EAF5EE] shadow-[0_5px_20px_rgba(72,117,86,0.08)] focus-within:border-accent/50 focus-within:ring-4 focus-within:ring-accent/10 transition-all">
+                  <div className="relative flex items-end gap-1 rounded-2xl px-2 py-3 border border-accent/20 bg-gradient-to-br from-[#F9FCF8] via-[#F1F8F2] to-[#EAF5EE] shadow-[0_5px_20px_rgba(72,117,86,0.08)] focus-within:border-accent/50 focus-within:ring-4 focus-within:ring-accent/10 transition-all">
 
                     <textarea
                       ref={
@@ -2014,8 +2014,8 @@ function App() {
                         handleKeyDown
                       }
                       placeholder="Ask something about your journal..."
-                      rows={1}
-                      className="flex-1 min-w-0 resize-none bg-transparent px-2.5 py-2 pr-[92px] text-sm text-ink placeholder:text-inkSoft/45 focus:outline-none max-h-[160px] leading-relaxed"
+                      rows={4}
+                      className="flex-1 min-w-0 resize-none bg-transparent pl-4 pr-[92px] py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none min-h-[120px] max-h-[160px] leading-relaxed"
                     />
 
                     {/* MIC */}
