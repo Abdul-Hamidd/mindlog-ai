@@ -443,8 +443,16 @@ function App() {
     setIsLoadingConvo
   ] = useState(false)
 
+  // CHANGED:
+  // Sidebar now defaults CLOSED on mobile (<768px) and OPEN on desktop,
+  // so the first thing seen on mobile is the Entries phase, not the sidebar.
   const [sidebarOpen, setSidebarOpen] =
-    useState(true)
+    useState(() => {
+      if (typeof window !== 'undefined') {
+        return window.innerWidth >= 768
+      }
+      return true
+    })
 
   const [entryText, setEntryText] =
     useState('')
@@ -467,6 +475,17 @@ function App() {
 
   const [entryCount, setEntryCount] =
     useState(0)
+
+  // ADDED:
+  // Real, keyboard-aware viewport height (tracks window.visualViewport)
+  // so the whole app (including the chat input) resizes and stays
+  // above the mobile keyboard instead of being pushed/hidden behind it.
+  const [appHeight, setAppHeight] =
+    useState(
+      typeof window !== 'undefined'
+        ? window.innerHeight
+        : 800
+    )
 
   const chatEndRef = useRef(null)
   const textareaRef = useRef(null)
@@ -611,6 +630,58 @@ function App() {
         window.visualViewport.removeEventListener(
           'scroll',
           handleViewportResize
+        )
+      }
+    }
+  }, [])
+
+  // ADDED:
+  // Track the real visible viewport height so the app container
+  // shrinks and rises above the on-screen keyboard automatically,
+  // the same way ChatGPT / Claude mobile UIs behave.
+  useEffect(() => {
+    const updateAppHeight = () => {
+      const vh =
+        window.visualViewport?.height ||
+        window.innerHeight
+
+      setAppHeight(vh)
+    }
+
+    updateAppHeight()
+
+    window.addEventListener(
+      'resize',
+      updateAppHeight
+    )
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener(
+        'resize',
+        updateAppHeight
+      )
+
+      window.visualViewport.addEventListener(
+        'scroll',
+        updateAppHeight
+      )
+    }
+
+    return () => {
+      window.removeEventListener(
+        'resize',
+        updateAppHeight
+      )
+
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener(
+          'resize',
+          updateAppHeight
+        )
+
+        window.visualViewport.removeEventListener(
+          'scroll',
+          updateAppHeight
         )
       }
     }
@@ -1228,7 +1299,14 @@ function App() {
     lastMsg?.content === ''
 
   return (
-    <div className="min-h-screen bg-paper flex font-sans overflow-hidden text-ink">
+    <div
+      style={{
+        height: appHeight
+          ? `${appHeight}px`
+          : '100vh'
+      }}
+      className="bg-paper flex font-sans overflow-hidden text-ink"
+    >
 
       {/* MOBILE BACKDROP */}
       {sidebarOpen && (
@@ -1438,7 +1516,7 @@ function App() {
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col h-screen min-w-0 transition-all duration-300">
+      <main className="flex-1 flex flex-col h-full min-w-0 transition-all duration-300">
 
         {/* TOP HEADER */}
         <header className="flex items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5 border-b border-paperLine shrink-0 bg-white/70 backdrop-blur-xl">
@@ -1532,8 +1610,26 @@ function App() {
         </header>
 
         {/* PAGE */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-5 lg:px-8 py-3 sm:py-4 lg:py-5">
-          <div className="w-full max-w-3xl mx-auto">
+        <div
+          className={`
+            flex-1 min-h-0 px-3 sm:px-5 lg:px-8 py-3 sm:py-4 lg:py-5
+            ${
+              activeTab === 'reflect'
+                ? 'flex flex-col overflow-hidden'
+                : 'overflow-y-auto'
+            }
+          `}
+        >
+          <div
+            className={`
+              w-full max-w-3xl mx-auto
+              ${
+                activeTab === 'reflect'
+                  ? 'flex-1 min-h-0 flex flex-col'
+                  : ''
+              }
+            `}
+          >
 
             {/* ================= ENTRIES ================= */}
             {activeTab ===
@@ -1772,13 +1868,13 @@ function App() {
             {/* ================= REFLECT ================= */}
             {activeTab ===
               'reflect' && (
-              <section className="bg-white/80 border border-paperLine rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden">
+              <section className="bg-white/80 border border-paperLine rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden flex-1 min-h-0 flex flex-col">
 
                 <div
                   className={
                     hasMessages
-                      ? 'max-h-[calc(100vh-205px)] min-h-[350px] overflow-y-auto px-4 sm:px-6 pt-4 sm:pt-5 pb-5 space-y-4'
-                      : 'min-h-[380px] flex items-center justify-center px-5'
+                      ? 'flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pt-4 sm:pt-5 pb-5 space-y-4'
+                      : 'flex-1 min-h-0 flex items-center justify-center px-5'
                   }
                 >
 
@@ -1969,7 +2065,7 @@ function App() {
                 </div>
 
                 {/* CHAT INPUT */}
-                <div className="border-t border-paperLine p-3 sm:p-3.5 bg-paper/50">
+                <div className="border-t border-paperLine p-3 sm:p-3.5 bg-paper/50 shrink-0">
 
                   {hasMessages && (
                     <div className="flex gap-2 overflow-x-auto pb-2 mb-1">
