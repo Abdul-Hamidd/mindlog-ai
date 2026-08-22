@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+
 import axios from 'axios'
 
 const API_URL = 'https://mindlog-backend.fastapicloud.dev'
@@ -48,8 +49,8 @@ function sanitizeAnswer(text) {
   if (!text) return text
 
   return text
-    .replace(/\n\*\*based on entries:[\s\S]\*\*$/i, '')
-    .replace(/\*\*?\s*\*Entry\s*—[^)]\*\*?\*?/gi, '')
+    .replace(/\n\*\*based on entries:[\s\S]\*\*\*$/i, '')
+    .replace(/\*\*?\s\*Entry\s*—[^)]\*\*\)?\*\*?/gi, '')
     .trim()
 }
 
@@ -279,7 +280,7 @@ function useVoiceInput(onResult) {
     typeof window !== 'undefined' &&
     Boolean(
       window.SpeechRecognition ||
-      window.webkitSpeechRecognition
+        window.webkitSpeechRecognition
     )
 
   const recognitionRef = useRef(null)
@@ -474,6 +475,13 @@ function App() {
 
   const isAskingRef = useRef(false)
 
+  // ADDED: sidebar swipe refs
+  const sidebarTouchStartX =
+    useRef(null)
+
+  const sidebarTouchStartY =
+    useRef(null)
+
   const entryVoice =
     useVoiceInput(setEntryText)
 
@@ -498,7 +506,8 @@ function App() {
 
       textareaRef.current.style.height =
         Math.min(
-          textareaRef.current.scrollHeight,
+          textareaRef.current
+            .scrollHeight,
           160
         ) + 'px'
     }
@@ -511,11 +520,101 @@ function App() {
 
       entryTextareaRef.current.style.height =
         Math.min(
-          entryTextareaRef.current.scrollHeight,
+          entryTextareaRef.current
+            .scrollHeight,
           160
         ) + 'px'
     }
   }, [entryText])
+
+  // ADDED:
+  // Keep focused chatbox above the mobile keyboard.
+  useEffect(() => {
+    const keepInputVisible = () => {
+      const activeElement =
+        document.activeElement
+
+      const isChatInput =
+        activeElement ===
+          textareaRef.current ||
+        activeElement ===
+          entryTextareaRef.current
+
+      if (!isChatInput) return
+
+      setTimeout(() => {
+        activeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        })
+      }, 80)
+    }
+
+    const handleViewportResize = () => {
+      keepInputVisible()
+    }
+
+    const handleFocusIn = (event) => {
+      if (
+        event.target === textareaRef.current ||
+        event.target ===
+          entryTextareaRef.current
+      ) {
+        setTimeout(() => {
+          event.target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          })
+        }, 100)
+      }
+    }
+
+    window.addEventListener(
+      'focusin',
+      handleFocusIn
+    )
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener(
+        'resize',
+        handleViewportResize
+      )
+
+      window.visualViewport.addEventListener(
+        'scroll',
+        handleViewportResize
+      )
+    }
+
+    window.addEventListener(
+      'resize',
+      handleViewportResize
+    )
+
+    return () => {
+      window.removeEventListener(
+        'focusin',
+        handleFocusIn
+      )
+
+      window.removeEventListener(
+        'resize',
+        handleViewportResize
+      )
+
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener(
+          'resize',
+          handleViewportResize
+        )
+
+        window.visualViewport.removeEventListener(
+          'scroll',
+          handleViewportResize
+        )
+      }
+    }
+  }, [])
 
   const toggleSidebar = () => {
     setSidebarOpen(
@@ -526,6 +625,58 @@ function App() {
   const closeSidebarOnMobile = () => {
     if (
       window.innerWidth < 768
+    ) {
+      setSidebarOpen(false)
+    }
+  }
+
+  // ADDED:
+  // Swipe sidebar left to close.
+  const handleSidebarTouchStart = (e) => {
+    const touch = e.touches[0]
+
+    sidebarTouchStartX.current =
+      touch.clientX
+
+    sidebarTouchStartY.current =
+      touch.clientY
+  }
+
+  const handleSidebarTouchMove = () => {
+    // Intentionally kept empty so normal sidebar scrolling
+    // continues to work without interference.
+  }
+
+  const handleSidebarTouchEnd = (e) => {
+    if (
+      sidebarTouchStartX.current === null ||
+      sidebarTouchStartY.current === null
+    ) {
+      return
+    }
+
+    const touch =
+      e.changedTouches[0]
+
+    const deltaX =
+      touch.clientX -
+      sidebarTouchStartX.current
+
+    const deltaY =
+      touch.clientY -
+      sidebarTouchStartY.current
+
+    sidebarTouchStartX.current =
+      null
+
+    sidebarTouchStartY.current =
+      null
+
+    // Only close on a clear left swipe.
+    if (
+      deltaX < -60 &&
+      Math.abs(deltaX) >
+        Math.abs(deltaY)
     ) {
       setSidebarOpen(false)
     }
@@ -555,7 +706,6 @@ function App() {
       setMessages([])
       setCurrentConversationId(null)
       setInput('')
-
       // Internal state remains "write"
       setActiveTab('write')
       closeSidebarOnMobile()
@@ -803,6 +953,7 @@ function App() {
         input.trim()
 
       setInput('')
+
       setActiveTab('reflect')
 
       const conversationHistory =
@@ -1091,6 +1242,15 @@ function App() {
 
       {/* SIDEBAR */}
       <aside
+        onTouchStart={
+          handleSidebarTouchStart
+        }
+        onTouchMove={
+          handleSidebarTouchMove
+        }
+        onTouchEnd={
+          handleSidebarTouchEnd
+        }
         className={`
           fixed inset-y-0 left-0 z-40
           w-[290px]
@@ -1130,16 +1290,7 @@ function App() {
               </div>
             </div>
 
-            {/* VIP BADGE */}
-            <div className="mt-4 flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C9A44C]/20 to-[#E7D49A]/10 border border-[#C9A44C]/30">
-                <IconSparkles className="w-3.5 h-3.5 text-[#D8B95C]" />
-
-                <span className="text-[10px] font-semibold tracking-[0.12em] text-[#E3CC83]">
-                  VIP REFLECTION
-                </span>
-              </div>
-            </div>
+            {/* VIP REFLECTION REMOVED */}
           </div>
 
           {/* NEW REFLECTION */}
@@ -1364,7 +1515,6 @@ function App() {
                 <IconCompass className="w-3.5 h-3.5" />
                 Reflect
               </button>
-
             </div>
           </div>
 
@@ -1383,7 +1533,6 @@ function App() {
 
         {/* PAGE */}
         <div className="flex-1 overflow-y-auto px-3 sm:px-5 lg:px-8 py-3 sm:py-4 lg:py-5">
-
           <div className="w-full max-w-3xl mx-auto">
 
             {/* ================= ENTRIES ================= */}
@@ -1411,13 +1560,11 @@ function App() {
                         Take a moment for yourself. There are no right or wrong words here.
                       </p>
                     </div>
-
                   </div>
                 </div>
 
                 {/* MOODS */}
                 <div className="px-5 sm:px-7 pb-3">
-
                   <p className="text-xs font-semibold text-inkSoft mb-2">
                     Pick a mood
                   </p>
@@ -1475,7 +1622,6 @@ function App() {
 
                 {/* ENTRY INPUT */}
                 <div className="px-5 sm:px-7">
-
                   <div className="relative">
 
                     <textarea
@@ -1492,7 +1638,7 @@ function App() {
                       }
                       placeholder="Write whatever is on your mind..."
                       rows={4}
-                      className="w-full resize-none bg-paper border border-paperLine rounded-2xl pl-4 pr-14 py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none focus:border-accent/60 focus:ring-4 focus:ring-accent/10 transition-all leading-relaxed min-h-[140px] max-h-[160px]"
+                      className="w-full resize-none bg-paper border border-paperLine rounded-2xl pl-4 pr-14 py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none focus:border-accent/60 focus:ring-4 focus:ring-accent/10 transition-all leading-relaxed min-h-[120px] max-h-[160px]"
                     />
 
                     {/* MIC */}
@@ -1512,7 +1658,6 @@ function App() {
                         className="bg-white/80 border border-paperLine/70 shadow-sm hover:bg-white"
                       />
                     </div>
-
                   </div>
 
                   {entryVoice.isListening && (
@@ -1521,7 +1666,6 @@ function App() {
                       Listening... speak naturally
                     </div>
                   )}
-
                 </div>
 
                 {/* SAVE */}
@@ -1531,7 +1675,6 @@ function App() {
                     {saveConfirmation && (
                       <div className="flex items-center gap-1.5 text-xs text-accent">
                         <IconCheck className="w-4 h-4" />
-
                         {
                           saveConfirmation
                         }
@@ -1561,7 +1704,6 @@ function App() {
                       </>
                     )}
                   </button>
-
                 </div>
 
                 {/* RECENT */}
@@ -1624,7 +1766,6 @@ function App() {
                     🔒 Your reflection is your private space. MindLog is designed for reflection, not therapy.
                   </p>
                 </div>
-
               </section>
             )}
 
@@ -1660,7 +1801,6 @@ function App() {
 
                       <div className="relative w-14 h-14 rounded-2xl bg-accent flex items-center justify-center shadow-lg shadow-accent/20 mb-4">
                         <IconSparkles className="w-6 h-6 text-white" />
-
                         <span className="absolute -right-1 -top-1 w-5 h-5 rounded-full bg-[#D8B95C] border-2 border-white" />
                       </div>
 
@@ -1711,7 +1851,6 @@ function App() {
                             )}
                         </div>
                       </div>
-
                     </div>
                   )}
 
@@ -1765,7 +1904,6 @@ function App() {
                                 <p className="text-[9px] text-inkSoft/35 text-right mt-1 mr-1">
                                   You
                                 </p>
-
                               </div>
                             </div>
                           )
@@ -1802,9 +1940,7 @@ function App() {
                                 <p className="text-[9px] text-inkSoft/35 mt-1 ml-1">
                                   MindLog AI
                                 </p>
-
                               </div>
-
                             </div>
                           )
                         }
@@ -1823,17 +1959,13 @@ function App() {
 
                       <div className="flex items-center gap-1.5 bg-accent/8 border border-accent/15 rounded-2xl rounded-bl-md px-4 py-3">
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse [animation-delay:150ms]" />
-
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse [animation-delay:300ms]" />
                       </div>
-
                     </div>
                   )}
 
                   <div ref={chatEndRef} />
-
                 </div>
 
                 {/* CHAT INPUT */}
@@ -1841,7 +1973,6 @@ function App() {
 
                   {hasMessages && (
                     <div className="flex gap-2 overflow-x-auto pb-2 mb-1">
-
                       {quickQuestions.map(
                         (question) => (
                           <button
@@ -1861,7 +1992,6 @@ function App() {
                           </button>
                         )
                       )}
-
                     </div>
                   )}
 
@@ -1885,7 +2015,7 @@ function App() {
                       }
                       placeholder="Ask something about your journal..."
                       rows={1}
-                      className="w-full min-h-[140px] max-h-[160px] resize-none bg-transparent px-2.5 py-2 pr-[92px] text-sm text-ink placeholder:text-inkSoft/45 focus:outline-none leading-relaxed"
+                      className="flex-1 min-w-0 resize-none bg-transparent px-2.5 py-2 pr-[92px] text-sm text-ink placeholder:text-inkSoft/45 focus:outline-none max-h-[160px] leading-relaxed"
                     />
 
                     {/* MIC */}
@@ -1921,7 +2051,6 @@ function App() {
                     >
                       <IconArrowUp className="w-4 h-4" />
                     </button>
-
                   </div>
 
                   {questionVoice.isListening && (
@@ -1938,12 +2067,9 @@ function App() {
                       Answers are based on your own journal entries
                     </span>
                   </div>
-
                 </div>
-
               </section>
             )}
-
           </div>
         </div>
       </main>
