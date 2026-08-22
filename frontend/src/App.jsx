@@ -31,7 +31,7 @@ function timeAgo(dateStr) {
   if (mins < 1) return 'Just now'
   if (mins < 60) return `${mins}m ago`
 
-  const hrs = Math.floor(mins / 60)
+  const hrs = Math.floor(mins / 24)
 
   if (hrs < 24) return `${hrs}h ago`
 
@@ -49,20 +49,20 @@ function sanitizeAnswer(text) {
   if (!text) return text
 
   return text
-    .replace(/\n\*\*based on entries:[\s\S]\*\*\*$/i, '')
-    .replace(/\*\*?\s\*Entry\s*—[^)]\*\*\)?\*\*?/gi, '')
+    .replace(/\n\*\*based on entries:[\s\S]*$/i, '')
+    .replace(/\*\*?\s*Entry\s*—[^)]*\*\*\)?\*\*?/gi, '')
     .trim()
 }
 
 const MOODS = [
-  { label: 'Calm', emoji: '😌', color: '#6B84A0' },
-  { label: 'Content', emoji: '🙂', color: '#5B7A63' },
-  { label: 'Happy', emoji: '😊', color: '#4A8B7C' },
-  { label: 'Grateful', emoji: '🙏', color: '#B58900' },
-  { label: 'Excited', emoji: '✨', color: '#C2703D' },
-  { label: 'Stressed', emoji: '😣', color: '#B4704A' },
-  { label: 'Anxious', emoji: '😟', color: '#9A6B9E' },
-  { label: 'Sad', emoji: '😔', color: '#7D8A99' }
+  { label: 'Calm', emoji: '😌', color: '#0EA5E9' },
+  { label: 'Content', emoji: '🙂', color: '#10B981' },
+  { label: 'Happy', emoji: '😊', color: '#F59E0B' },
+  { label: 'Grateful', emoji: '🙏', color: '#8B5CF6' },
+  { label: 'Excited', emoji: '✨', color: '#EC4899' },
+  { label: 'Stressed', emoji: '😣', color: '#EF4444' },
+  { label: 'Anxious', emoji: '😟', color: '#F97316' },
+  { label: 'Sad', emoji: '😔', color: '#64748B' }
 ]
 
 const IconMenu = (props) => (
@@ -395,14 +395,14 @@ function MicButton({
         transition-all duration-200
         ${
           isListening
-            ? 'bg-alert/10 text-alert scale-105'
-            : 'text-inkSoft hover:text-ink hover:bg-paperLine/60'
+            ? 'bg-red-500/20 text-red-600 scale-105'
+            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/60'
         }
         ${className}
       `}
     >
       {isListening && (
-        <span className="absolute inset-0 rounded-full bg-alert/10 animate-ping" />
+        <span className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
       )}
 
       <span className="relative flex items-center justify-center">
@@ -415,9 +415,6 @@ function MicButton({
 function App() {
   const [userId] = useState(getUserId)
 
-  // IMPORTANT:
-  // Keep internal value as "write".
-  // "Entries" is only the visible label.
   const [activeTab, setActiveTab] =
     useState('write')
 
@@ -443,9 +440,6 @@ function App() {
     setIsLoadingConvo
   ] = useState(false)
 
-  // CHANGED:
-  // Sidebar now defaults CLOSED on mobile (<768px) and OPEN on desktop,
-  // so the first thing seen on mobile is the Entries phase, not the sidebar.
   const [sidebarOpen, setSidebarOpen] =
     useState(() => {
       if (typeof window !== 'undefined') {
@@ -476,10 +470,6 @@ function App() {
   const [entryCount, setEntryCount] =
     useState(0)
 
-  // ADDED:
-  // Real, keyboard-aware viewport height (tracks window.visualViewport)
-  // so the whole app (including the chat input) resizes and stays
-  // above the mobile keyboard instead of being pushed/hidden behind it.
   const [appHeight, setAppHeight] =
     useState(
       typeof window !== 'undefined'
@@ -494,7 +484,6 @@ function App() {
 
   const isAskingRef = useRef(false)
 
-  // ADDED: sidebar swipe refs
   const sidebarTouchStartX =
     useRef(null)
 
@@ -546,8 +535,6 @@ function App() {
     }
   }, [entryText])
 
-  // ADDED:
-  // Keep focused chatbox above the mobile keyboard.
   useEffect(() => {
     const keepInputVisible = () => {
       const activeElement =
@@ -635,10 +622,6 @@ function App() {
     }
   }, [])
 
-  // ADDED:
-  // Track the real visible viewport height so the app container
-  // shrinks and rises above the on-screen keyboard automatically,
-  // the same way ChatGPT / Claude mobile UIs behave.
   useEffect(() => {
     const updateAppHeight = () => {
       const vh =
@@ -701,8 +684,6 @@ function App() {
     }
   }
 
-  // ADDED:
-  // Swipe sidebar left to close.
   const handleSidebarTouchStart = (e) => {
     const touch = e.touches[0]
 
@@ -713,10 +694,7 @@ function App() {
       touch.clientY
   }
 
-  const handleSidebarTouchMove = () => {
-    // Intentionally kept empty so normal sidebar scrolling
-    // continues to work without interference.
-  }
+  const handleSidebarTouchMove = () => {}
 
   const handleSidebarTouchEnd = (e) => {
     if (
@@ -743,7 +721,6 @@ function App() {
     sidebarTouchStartY.current =
       null
 
-    // Only close on a clear left swipe.
     if (
       deltaX < -60 &&
       Math.abs(deltaX) >
@@ -777,7 +754,6 @@ function App() {
       setMessages([])
       setCurrentConversationId(null)
       setInput('')
-      // Internal state remains "write"
       setActiveTab('write')
       closeSidebarOnMobile()
     }
@@ -1305,7 +1281,7 @@ function App() {
           ? `${appHeight}px`
           : '100vh'
       }}
-      className="bg-gradient-to-br from-[#FAFDF8] via-[#F2F8F3] to-[#E9F4EC] flex font-sans overflow-hidden text-ink"
+      className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex font-sans overflow-hidden text-slate-800"
     >
 
       {/* MOBILE BACKDROP */}
@@ -1314,7 +1290,7 @@ function App() {
           onClick={() =>
             setSidebarOpen(false)
           }
-          className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-30 md:hidden"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 md:hidden"
         />
       )}
 
@@ -1332,9 +1308,9 @@ function App() {
         className={`
           fixed inset-y-0 left-0 z-40
           w-[290px]
-          bg-ink text-paper
+          bg-slate-900 text-slate-100
           flex flex-col
-          shadow-2xl
+          shadow-2xl border-r border-slate-800
           overflow-hidden
           transition-all duration-300 ease-in-out
           md:sticky md:top-0 md:h-screen
@@ -1351,24 +1327,22 @@ function App() {
           {/* SIDEBAR HEADER */}
           <div className="px-6 pt-6 pb-4">
             <div className="flex items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-emerald-500 flex items-center justify-center shadow-lg">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
                   <IconCompass className="w-5 h-5 text-white" />
                 </div>
 
                 <div>
-                  <h1 className="font-display text-[25px] tracking-tight leading-none">
+                  <h1 className="font-bold text-2xl tracking-tight leading-none bg-gradient-to-r from-indigo-200 via-pink-200 to-white bg-clip-text text-transparent">
                     MindLog
                   </h1>
 
-                  <p className="text-[10px] text-paper/45 mt-1 uppercase tracking-[0.18em]">
-                    Your private space
+                  <p className="text-[10px] text-indigo-300/60 mt-1 uppercase tracking-[0.2em] font-semibold">
+                    UK Modern Suite
                   </p>
                 </div>
               </div>
             </div>
-
-            {/* VIP REFLECTION REMOVED */}
           </div>
 
           {/* NEW REFLECTION */}
@@ -1377,40 +1351,40 @@ function App() {
               onClick={
                 startNewReflection
               }
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-accent to-emerald-600 hover:opacity-90 text-white rounded-xl py-3 text-sm font-semibold shadow-lg transition-all active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white rounded-xl py-3 text-sm font-bold shadow-lg shadow-indigo-500/25 transition-all transform active:scale-[0.98]"
             >
-              <IconPlus className="w-4 h-4" />
+              <IconPlus className="w-4 h-4 stroke-[2.5]" />
               New reflection
             </button>
           </div>
 
           {/* CONVERSATIONS TITLE */}
           <div className="px-6 pb-2 flex items-center justify-between">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-paper/35 font-semibold">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-bold">
               Your reflections
             </p>
 
-            <span className="text-[10px] text-paper/35">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-indigo-300">
               {conversations.length}
             </span>
           </div>
 
           {/* CONVERSATIONS */}
-          <div className="flex-1 overflow-y-auto px-4 pb-4">
+          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
             {conversations.length ===
               0 && (
               <div className="text-center mt-8 px-5">
-                <div className="w-11 h-11 mx-auto rounded-full bg-white/5 flex items-center justify-center mb-3">
-                  <IconMessage className="w-5 h-5 text-paper/25" />
+                <div className="w-12 h-12 mx-auto rounded-2xl bg-slate-800/80 flex items-center justify-center mb-3 text-indigo-400">
+                  <IconMessage className="w-6 h-6" />
                 </div>
 
-                <p className="text-xs text-paper/35 leading-relaxed">
+                <p className="text-xs text-slate-400 leading-relaxed">
                   Your reflections will appear here.
                 </p>
               </div>
             )}
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {conversations.map(
                 (conv) => {
                   const isActive =
@@ -1430,16 +1404,16 @@ function App() {
                       className={`
                         group relative flex items-center gap-3
                         px-3.5 py-2.5 rounded-xl cursor-pointer
-                        transition-all
+                        transition-all duration-200
                         ${
                           isActive
-                            ? 'bg-white/10'
-                            : 'hover:bg-white/[0.06]'
+                            ? 'bg-gradient-to-r from-indigo-900/60 to-purple-900/40 text-white border border-indigo-500/30'
+                            : 'hover:bg-slate-800/60 text-slate-300'
                         }
                       `}
                     >
                       {isActive && (
-                        <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full bg-accent" />
+                        <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gradient-to-b from-indigo-400 to-pink-500" />
                       )}
 
                       <div
@@ -1448,8 +1422,8 @@ function App() {
                           justify-center shrink-0
                           ${
                             isActive
-                              ? 'bg-accent/20 text-accent'
-                              : 'bg-white/5 text-paper/35'
+                              ? 'bg-gradient-to-br from-indigo-500 to-pink-500 text-white shadow-md'
+                              : 'bg-slate-800 text-slate-400'
                           }
                         `}
                       >
@@ -1459,11 +1433,11 @@ function App() {
                       <div className="min-w-0 flex-1">
                         <p
                           className={`
-                            text-[13px] truncate leading-snug
+                            text-[13px] truncate leading-snug font-medium
                             ${
                               isActive
-                                ? 'text-paper font-medium'
-                                : 'text-paper/75'
+                                ? 'text-white font-semibold'
+                                : 'text-slate-300'
                             }
                           `}
                         >
@@ -1472,7 +1446,7 @@ function App() {
                           }
                         </p>
 
-                        <p className="text-[10px] text-paper/30 mt-0.5">
+                        <p className="text-[10px] text-slate-500 mt-0.5">
                           {timeAgo(
                             conv.created_at
                           )}
@@ -1488,7 +1462,7 @@ function App() {
                             e
                           )
                         }
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-paper/25 hover:text-alert hover:bg-alert/10 transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
                         title="Delete reflection"
                       >
                         <IconTrash className="w-3.5 h-3.5" />
@@ -1501,13 +1475,13 @@ function App() {
           </div>
 
           {/* SIDEBAR FOOTER */}
-          <div className="px-5 py-4 border-t border-accent/20">
-            <div className="flex items-start gap-2.5">
-              <div className="mt-0.5 w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                <IconHeart className="w-3.5 h-3.5 text-accent" />
+          <div className="px-5 py-4 border-t border-slate-800/80 bg-slate-950/40">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 w-7 h-7 rounded-xl bg-gradient-to-tr from-pink-500 to-rose-500 flex items-center justify-center shrink-0 shadow-md">
+                <IconHeart className="w-4 h-4 text-white" />
               </div>
 
-              <p className="text-[10px] text-paper/35 leading-relaxed">
+              <p className="text-[11px] text-slate-400 leading-relaxed">
                 Your journal stays focused on your own words and reflections.
               </p>
             </div>
@@ -1519,16 +1493,16 @@ function App() {
       <main className="flex-1 flex flex-col h-full min-w-0 transition-all duration-300">
 
         {/* TOP HEADER */}
-        <header className="flex items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5 border-b border-accent/15 shrink-0 bg-gradient-to-r from-white/80 via-accent/5 to-white/80 backdrop-blur-xl">
+        <header className="flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 py-3 border-b border-indigo-100/80 shrink-0 bg-white/80 backdrop-blur-xl shadow-sm">
 
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
 
             {/* SIDEBAR TOGGLE */}
             <button
               onClick={
                 toggleSidebar
               }
-              className="p-2.5 rounded-xl text-inkSoft hover:text-ink hover:bg-paperLine/60 transition shrink-0"
+              className="p-2 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition shrink-0"
               title={
                 sidebarOpen
                   ? 'Close sidebar'
@@ -1543,10 +1517,10 @@ function App() {
               <IconMenu className="w-5 h-5" />
             </button>
 
-            <div className="w-px h-6 bg-paperLine hidden sm:block" />
+            <div className="w-px h-6 bg-slate-200 hidden sm:block" />
 
             {/* ENTRIES / REFLECT */}
-            <div className="flex items-center bg-paperLine/50 rounded-full p-1 border border-paperLine/70">
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80 shadow-inner">
 
               <button
                 onClick={() =>
@@ -1555,15 +1529,15 @@ function App() {
                   )
                 }
                 className={`
-                  flex items-center gap-1.5
-                  px-3 sm:px-4 py-1.5
-                  rounded-full text-xs font-semibold
-                  transition-all
+                  flex items-center gap-2
+                  px-4 py-1.5
+                  rounded-lg text-xs font-bold
+                  transition-all duration-200
                   ${
                     activeTab ===
                     'write'
-                      ? 'bg-white text-ink shadow-sm'
-                      : 'text-inkSoft hover:text-ink'
+                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md'
+                      : 'text-slate-600 hover:text-slate-900'
                   }
                 `}
               >
@@ -1578,15 +1552,15 @@ function App() {
                   )
                 }
                 className={`
-                  flex items-center gap-1.5
-                  px-3 sm:px-4 py-1.5
-                  rounded-full text-xs font-semibold
-                  transition-all
+                  flex items-center gap-2
+                  px-4 py-1.5
+                  rounded-lg text-xs font-bold
+                  transition-all duration-200
                   ${
                     activeTab ===
                     'reflect'
-                      ? 'bg-white text-ink shadow-sm'
-                      : 'text-inkSoft hover:text-ink'
+                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+                      : 'text-slate-600 hover:text-slate-900'
                   }
                 `}
               >
@@ -1597,8 +1571,8 @@ function App() {
           </div>
 
           {/* ENTRY COUNT */}
-          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-inkSoft bg-paperLine/50 px-2.5 sm:px-3 py-1.5 rounded-full border border-paperLine/60 shrink-0">
-            <IconBook className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-3 py-1.5 rounded-xl shadow-sm shrink-0">
+            <IconBook className="w-4 h-4 text-indigo-600" />
 
             <span>
               {entryCount}{' '}
@@ -1612,7 +1586,7 @@ function App() {
         {/* PAGE */}
         <div
           className={`
-            flex-1 min-h-0 px-3 sm:px-5 lg:px-8 py-3 sm:py-4 lg:py-5
+            flex-1 min-h-0 px-3 sm:px-6 lg:px-8 py-3 sm:py-5
             ${
               activeTab === 'reflect'
                 ? 'flex flex-col overflow-hidden'
@@ -1634,25 +1608,25 @@ function App() {
             {/* ================= ENTRIES ================= */}
             {activeTab ===
               'write' && (
-              <section className="bg-white/85 border border-paperLine border-t-4 border-t-accent rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden">
+              <section className="bg-white/90 backdrop-blur-md border border-indigo-100 rounded-3xl shadow-xl shadow-indigo-500/5 overflow-hidden transition-all my-auto">
 
-                <div className="p-4 sm:p-5 pb-3">
-                  <div className="flex items-start gap-3">
+                <div className="p-5 sm:p-7 pb-3">
+                  <div className="flex items-start gap-4">
 
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent to-emerald-600 flex items-center justify-center shrink-0 shadow-md">
-                      <IconSparkles className="w-5 h-5 text-white" />
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/25">
+                      <IconSparkles className="w-6 h-6 text-white" />
                     </div>
 
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-accent mb-1">
+                      <p className="text-[11px] uppercase tracking-[0.2em] font-bold text-indigo-600 mb-1">
                         Daily reflection
                       </p>
 
-                      <h2 className="font-display text-2xl sm:text-3xl text-ink leading-tight">
+                      <h2 className="font-bold text-2xl sm:text-3xl text-slate-900 tracking-tight leading-tight">
                         How are you feeling today?
                       </h2>
 
-                      <p className="text-sm text-inkSoft mt-1.5 leading-relaxed">
+                      <p className="text-sm text-slate-500 mt-1 leading-relaxed font-medium">
                         Take a moment for yourself. There are no right or wrong words here.
                       </p>
                     </div>
@@ -1660,12 +1634,12 @@ function App() {
                 </div>
 
                 {/* MOODS */}
-                <div className="px-5 sm:px-7 pb-3">
-                  <p className="text-xs font-semibold text-inkSoft mb-2">
+                <div className="px-5 sm:px-7 pb-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
                     Pick a mood
                   </p>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2.5">
                     {MOODS.map(
                       (mood) => {
                         const selected =
@@ -1684,12 +1658,12 @@ function App() {
                                   : mood.label
                               )
                             }
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all active:scale-95"
+                            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all duration-200 active:scale-95 shadow-sm"
                             style={{
                               backgroundColor:
                                 selected
                                   ? mood.color
-                                  : `${mood.color}12`,
+                                  : `${mood.color}15`,
                               color:
                                 selected
                                   ? '#fff'
@@ -1697,10 +1671,10 @@ function App() {
                               borderColor:
                                 selected
                                   ? mood.color
-                                  : `${mood.color}20`
+                                  : `${mood.color}30`
                             }}
                           >
-                            <span>
+                            <span className="text-base">
                               {
                                 mood.emoji
                               }
@@ -1717,7 +1691,7 @@ function App() {
                 </div>
 
                 {/* ENTRY INPUT */}
-                <div className="px-5 sm:px-7 mt-4 sm:mt-6">
+                <div className="px-5 sm:px-7 mt-2">
                   <div className="relative">
 
                     <textarea
@@ -1734,11 +1708,11 @@ function App() {
                       }
                       placeholder="Write whatever is on your mind..."
                       rows={4}
-                      className="w-full resize-none bg-gradient-to-br from-[#F9FCF8] via-[#F1F8F2] to-[#EAF5EE] border border-accent/20 rounded-2xl pl-4 pr-14 py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none focus:border-accent/60 focus:ring-4 focus:ring-accent/10 transition-all leading-relaxed min-h-[120px] max-h-[160px] shadow-[0_5px_20px_rgba(72,117,86,0.08)]"
+                      className="w-full resize-y bg-slate-50/80 border-2 border-indigo-100 rounded-2xl pl-4 pr-14 py-3.5 text-[15px] text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 transition-all leading-relaxed min-h-[110px] max-h-[220px] shadow-inner font-medium"
                     />
 
                     {/* MIC */}
-                    <div className="absolute right-2.5 bottom-2.5 z-10">
+                    <div className="absolute right-3 bottom-3 z-10">
                       <MicButton
                         isListening={
                           entryVoice.isListening
@@ -1751,26 +1725,26 @@ function App() {
                             entryText
                           )
                         }
-                        className="bg-white/80 border border-paperLine/70 shadow-sm hover:bg-white"
+                        className="bg-white border border-slate-200 shadow-md hover:bg-slate-50 text-indigo-600"
                       />
                     </div>
                   </div>
 
                   {entryVoice.isListening && (
-                    <div className="flex items-center gap-2 text-xs text-alert mt-1.5">
-                      <span className="w-2 h-2 rounded-full bg-alert animate-pulse" />
+                    <div className="flex items-center gap-2 text-xs font-semibold text-red-500 mt-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
                       Listening... speak naturally
                     </div>
                   )}
                 </div>
 
                 {/* SAVE */}
-                <div className="px-5 sm:px-7 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="px-5 sm:px-7 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 
                   <div className="min-h-5">
                     {saveConfirmation && (
-                      <div className="flex items-center gap-1.5 text-xs text-accent">
-                        <IconCheck className="w-4 h-4" />
+                      <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                        <IconCheck className="w-4 h-4 stroke-[3]" />
                         {
                           saveConfirmation
                         }
@@ -1786,7 +1760,7 @@ function App() {
                       isSavingEntry ||
                       !entryText.trim()
                     }
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-ink hover:bg-emerald-600 text-paper px-6 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-25 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-sm"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white px-7 py-3 rounded-xl text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] shadow-lg shadow-indigo-500/25"
                   >
                     {isSavingEntry ? (
                       <>
@@ -1795,7 +1769,7 @@ function App() {
                       </>
                     ) : (
                       <>
-                        <IconArrowUp className="w-4 h-4" />
+                        <IconArrowUp className="w-4 h-4 stroke-[2.5]" />
                         Save my entry
                       </>
                     )}
@@ -1805,9 +1779,9 @@ function App() {
                 {/* RECENT */}
                 {recentEntries.length >
                   0 && (
-                  <div className="px-5 sm:px-7 pb-4 pt-1 border-t border-paperLine">
+                  <div className="px-5 sm:px-7 pb-4 pt-2 border-t border-slate-100">
 
-                    <p className="text-[11px] uppercase tracking-[0.12em] font-semibold text-inkSoft/60 mb-2">
+                    <p className="text-[11px] uppercase tracking-wider font-bold text-slate-400 mb-2">
                       Saved recently
                     </p>
 
@@ -1826,18 +1800,18 @@ function App() {
 
                           const moodColor =
                             mood?.color ||
-                            '#9A9690'
+                            '#6366F1'
 
                           return (
                             <span
                               key={
                                 index
                               }
-                              className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-full"
+                              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border shadow-sm"
                               style={{
-                                backgroundColor: `${moodColor}12`,
-                                color:
-                                  moodColor
+                                backgroundColor: `${moodColor}15`,
+                                color: moodColor,
+                                borderColor: `${moodColor}30`
                               }}
                             >
                               <span>
@@ -1857,8 +1831,8 @@ function App() {
                   </div>
                 )}
 
-                <div className="px-5 sm:px-7 pb-4 text-center">
-                  <p className="text-[10px] text-inkSoft/40 leading-relaxed">
+                <div className="px-5 sm:px-7 pb-5 text-center bg-slate-50/50 pt-3 border-t border-slate-100">
+                  <p className="text-[11px] font-medium text-slate-400 leading-relaxed">
                     🔒 Your reflection is your private space. MindLog is designed for reflection, not therapy.
                   </p>
                 </div>
@@ -1868,12 +1842,12 @@ function App() {
             {/* ================= REFLECT ================= */}
             {activeTab ===
               'reflect' && (
-              <section className="bg-white/85 border border-paperLine border-t-4 border-t-emerald-500 rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden flex-1 min-h-0 flex flex-col">
+              <section className="bg-white/90 backdrop-blur-md border border-indigo-100 rounded-3xl shadow-xl shadow-indigo-500/5 overflow-hidden flex-1 min-h-0 flex flex-col">
 
                 <div
                   className={
                     hasMessages
-                      ? 'flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pt-4 sm:pt-5 pb-5 space-y-4'
+                      ? 'flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pt-5 pb-5 space-y-5'
                       : 'flex-1 min-h-0 flex items-center justify-center px-5'
                   }
                 >
@@ -1881,9 +1855,9 @@ function App() {
                   {/* LOADING */}
                   {isLoadingConvo && (
                     <div className="flex flex-col items-center justify-center text-center">
-                      <div className="w-10 h-10 rounded-full border-2 border-accent/20 border-t-accent animate-spin mb-3" />
+                      <div className="w-12 h-12 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin mb-3 shadow-md" />
 
-                      <p className="text-sm text-inkSoft">
+                      <p className="text-sm font-semibold text-slate-600">
                         Opening your reflection...
                       </p>
                     </div>
@@ -1893,32 +1867,32 @@ function App() {
                   {!isLoadingConvo &&
                     messages.length ===
                       0 && (
-                    <div className="w-full flex flex-col items-center text-center">
+                    <div className="w-full flex flex-col items-center text-center py-4">
 
-                      <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-emerald-600 flex items-center justify-center shadow-lg shadow-accent/20 mb-4">
-                        <IconSparkles className="w-6 h-6 text-white" />
-                        <span className="absolute -right-1 -top-1 w-5 h-5 rounded-full bg-[#D8B95C] border-2 border-white" />
+                      <div className="relative w-16 h-16 rounded-3xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl shadow-indigo-500/30 mb-4">
+                        <IconSparkles className="w-8 h-8 text-white" />
+                        <span className="absolute -right-1 -top-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-white shadow-sm" />
                       </div>
 
-                      <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-accent mb-1.5">
+                      <p className="text-[11px] uppercase tracking-[0.2em] font-bold text-indigo-600 mb-1.5">
                         Your personal reflection
                       </p>
 
-                      <h2 className="font-display text-2xl sm:text-3xl text-ink mb-1.5">
+                      <h2 className="font-bold text-2xl sm:text-3xl text-slate-900 mb-2 tracking-tight">
                         Ask your journal anything
                       </h2>
 
-                      <p className="text-sm text-inkSoft max-w-md leading-relaxed">
+                      <p className="text-sm font-medium text-slate-500 max-w-md leading-relaxed">
                         I can help you explore patterns, feelings, memories and thoughts from your own journal.
                       </p>
 
-                      <div className="w-full max-w-xl mt-5">
+                      <div className="w-full max-w-xl mt-6">
 
-                        <p className="text-[11px] font-semibold text-inkSoft mb-2">
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
                           Try asking
                         </p>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           {quickQuestions
                             .slice(
                               0,
@@ -1937,7 +1911,7 @@ function App() {
                                       question
                                     )
                                   }
-                                  className="text-left px-4 py-2.5 rounded-xl border border-paperLine bg-paper/50 hover:bg-accent/5 hover:border-accent/30 text-xs text-inkSoft hover:text-ink transition-all"
+                                  className="text-left px-4 py-3 rounded-2xl border border-indigo-100 bg-gradient-to-r from-slate-50 to-indigo-50/30 hover:from-indigo-500 hover:to-pink-500 hover:text-white text-xs font-bold text-slate-700 transition-all duration-200 shadow-sm hover:shadow-md hover:border-transparent active:scale-[0.98]"
                                 >
                                   {
                                     question
@@ -1967,7 +1941,7 @@ function App() {
                               key={
                                 index
                               }
-                              className="text-center text-[11px] text-inkSoft italic"
+                              className="text-center text-xs font-semibold text-slate-400 italic bg-slate-100/60 py-2.5 px-4 rounded-xl border border-slate-200/50"
                             >
                               {
                                 msg.content
@@ -1987,17 +1961,17 @@ function App() {
                               }
                               className="flex justify-end"
                             >
-                              <div className="max-w-[88%] sm:max-w-[75%]">
+                              <div className="max-w-[88%] sm:max-w-[78%]">
 
-                                <div className="bg-ink text-paper rounded-2xl rounded-br-md px-4 py-3 shadow-sm">
-                                  <p className="whitespace-pre-wrap leading-relaxed text-sm">
+                                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-2xl rounded-br-none px-5 py-3.5 shadow-lg shadow-indigo-500/20">
+                                  <p className="whitespace-pre-wrap leading-relaxed text-sm font-semibold">
                                     {
                                       msg.content
                                     }
                                   </p>
                                 </div>
 
-                                <p className="text-[9px] text-inkSoft/35 text-right mt-1 mr-1">
+                                <p className="text-[10px] font-bold text-slate-400 text-right mt-1.5 mr-1 uppercase tracking-wider">
                                   You
                                 </p>
                               </div>
@@ -2016,24 +1990,24 @@ function App() {
                               key={
                                 index
                               }
-                              className="flex justify-start gap-2.5"
+                              className="flex justify-start gap-3"
                             >
 
-                              <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                                <IconSparkles className="w-4 h-4 text-white" />
+                              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shrink-0 mt-0.5 shadow-lg shadow-indigo-500/25">
+                                <IconSparkles className="w-5 h-5 text-white" />
                               </div>
 
-                              <div className="max-w-[88%] sm:max-w-[78%]">
+                              <div className="max-w-[88%] sm:max-w-[80%]">
 
-                                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl rounded-bl-md px-4 py-3">
-                                  <p className="whitespace-pre-wrap leading-relaxed text-[15px] text-ink">
+                                <div className="bg-indigo-50/90 border-2 border-indigo-200/80 text-indigo-950 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm">
+                                  <p className="whitespace-pre-wrap leading-relaxed text-[15px] font-bold">
                                     {
                                       msg.content
                                     }
                                   </p>
                                 </div>
 
-                                <p className="text-[9px] text-emerald-700/50 mt-1 ml-1">
+                                <p className="text-[10px] font-bold text-indigo-600 mt-1.5 ml-1 uppercase tracking-wider">
                                   MindLog AI
                                 </p>
                               </div>
@@ -2047,16 +2021,16 @@ function App() {
 
                   {/* TYPING */}
                   {showTypingIndicator && (
-                    <div className="flex justify-start gap-2.5">
+                    <div className="flex justify-start gap-3">
 
-                      <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0">
-                        <IconSparkles className="w-4 h-4 text-white" />
+                      <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/25">
+                        <IconSparkles className="w-5 h-5 text-white" />
                       </div>
 
-                      <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-2xl rounded-bl-md px-4 py-3">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse [animation-delay:150ms]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse [animation-delay:300ms]" />
+                      <div className="flex items-center gap-2 bg-indigo-50/90 border-2 border-indigo-200/80 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-indigo-600 animate-bounce" />
+                        <span className="w-2 h-2 rounded-full bg-purple-600 animate-bounce [animation-delay:150ms]" />
+                        <span className="w-2 h-2 rounded-full bg-pink-600 animate-bounce [animation-delay:300ms]" />
                       </div>
                     </div>
                   )}
@@ -2065,10 +2039,10 @@ function App() {
                 </div>
 
                 {/* CHAT INPUT */}
-                <div className="border-t border-paperLine p-3 sm:p-3.5 bg-paper/50 shrink-0">
+                <div className="border-t border-indigo-100 p-3.5 sm:p-4 bg-slate-50/80 shrink-0">
 
                   {hasMessages && (
-                    <div className="flex gap-2 overflow-x-auto pb-2 mb-1">
+                    <div className="flex gap-2 overflow-x-auto pb-2.5 mb-1.5 scrollbar-none">
                       {quickQuestions.map(
                         (question) => (
                           <button
@@ -2080,7 +2054,7 @@ function App() {
                                 question
                               )
                             }
-                            className="shrink-0 px-3 py-1.5 rounded-full bg-white border border-paperLine text-[10px] text-inkSoft hover:text-accent hover:border-accent/30 transition"
+                            className="shrink-0 px-3.5 py-1.5 rounded-xl bg-white border border-indigo-100 text-xs font-bold text-slate-600 hover:text-indigo-600 hover:border-indigo-300 transition-all shadow-sm"
                           >
                             {
                               question
@@ -2092,7 +2066,7 @@ function App() {
                   )}
 
                   {/* CHATBOX */}
-                  <div className="relative flex items-end gap-1 rounded-2xl px-2 py-3 border border-accent/20 bg-gradient-to-br from-[#F9FCF8] via-[#F1F8F2] to-[#EAF5EE] shadow-[0_5px_20px_rgba(72,117,86,0.08)] focus-within:border-accent/50 focus-within:ring-4 focus-within:ring-accent/10 transition-all">
+                  <div className="relative flex items-end gap-2 rounded-2xl px-2 py-2 border-2 border-indigo-100 bg-white shadow-lg shadow-indigo-500/5 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all">
 
                     <textarea
                       ref={
@@ -2110,12 +2084,12 @@ function App() {
                         handleKeyDown
                       }
                       placeholder="Ask something about your journal..."
-                      rows={4}
-                      className="flex-1 min-w-0 resize-none bg-transparent pl-4 pr-[92px] py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none min-h-[120px] max-h-[160px] leading-relaxed"
+                      rows={2}
+                      className="flex-1 min-w-0 resize-y bg-transparent pl-3 pr-[96px] py-2 text-[15px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none min-h-[50px] max-h-[160px] leading-relaxed"
                     />
 
                     {/* MIC */}
-                    <div className="absolute right-[52px] bottom-[8px] z-10">
+                    <div className="absolute right-[56px] bottom-[10px] z-10">
                       <MicButton
                         isListening={
                           questionVoice.isListening
@@ -2128,7 +2102,7 @@ function App() {
                             input
                           )
                         }
-                        className="bg-white/70 border border-accent/10 shadow-sm hover:bg-white"
+                        className="bg-slate-100 border border-slate-200 shadow-sm hover:bg-slate-200 text-indigo-600"
                       />
                     </div>
 
@@ -2141,23 +2115,23 @@ function App() {
                         isAsking ||
                         !input.trim()
                       }
-                      className="absolute right-2 bottom-2 shrink-0 bg-ink text-paper w-10 h-10 flex items-center justify-center rounded-xl disabled:opacity-20 hover:bg-emerald-600 transition-all active:scale-95 shadow-sm"
+                      className="absolute right-2 bottom-2 shrink-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white w-10 h-10 flex items-center justify-center rounded-xl disabled:opacity-30 hover:opacity-90 transition-all active:scale-95 shadow-md shadow-indigo-500/30"
                       title="Ask MindLog"
                       aria-label="Send question"
                     >
-                      <IconArrowUp className="w-4 h-4" />
+                      <IconArrowUp className="w-5 h-5 stroke-[2.5]" />
                     </button>
                   </div>
 
                   {questionVoice.isListening && (
-                    <div className="flex items-center justify-center gap-1.5 text-[11px] text-alert mt-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-alert animate-pulse" />
+                    <div className="flex items-center justify-center gap-2 text-xs font-semibold text-red-500 mt-2">
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                       Listening...
                     </div>
                   )}
 
-                  <div className="flex items-center justify-center gap-1.5 text-[9px] sm:text-[10px] text-inkSoft/40 mt-2">
-                    <IconSparkles className="w-3 h-3" />
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] font-semibold text-slate-400 mt-2.5">
+                    <IconSparkles className="w-3.5 h-3.5 text-indigo-500" />
 
                     <span>
                       Answers are based on your own journal entries
