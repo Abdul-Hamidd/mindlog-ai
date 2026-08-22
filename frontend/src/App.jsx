@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-
 import axios from 'axios'
 
 const API_URL = 'https://mindlog-backend.fastapicloud.dev'
@@ -49,8 +48,8 @@ function sanitizeAnswer(text) {
   if (!text) return text
 
   return text
-    .replace(/\n\*based on entries:[\s\S]*\*$/i, '')
-    .replace(/\*?\(?\s*Entry\s*—[^)]*\)?\*?/gi, '')
+    .replace(/\n\*\*based on entries:[\s\S]\*\*$/i, '')
+    .replace(/\*\*?\s*\*Entry\s*—[^)]\*\*?\*?/gi, '')
     .trim()
 }
 
@@ -140,7 +139,6 @@ const IconBook = (props) => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-
     <path
       d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"
       strokeLinecap="round"
@@ -161,7 +159,6 @@ const IconPen = (props) => (
       d="M12 20h9"
       strokeLinecap="round"
     />
-
     <path
       d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
       strokeLinecap="round"
@@ -179,7 +176,6 @@ const IconCompass = (props) => (
     {...props}
   >
     <circle cx="12" cy="12" r="9" />
-
     <path
       d="M15 9l-3 6-3-6 3 1.5L15 9z"
       strokeLinecap="round"
@@ -216,7 +212,6 @@ const IconMic = (props) => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-
     <path
       d="M19 11a7 7 0 01-14 0M12 18v3"
       strokeLinecap="round"
@@ -237,7 +232,6 @@ const IconSparkles = (props) => (
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-
     <path
       d="M19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7L19 16z"
       strokeLinecap="round"
@@ -285,7 +279,7 @@ function useVoiceInput(onResult) {
     typeof window !== 'undefined' &&
     Boolean(
       window.SpeechRecognition ||
-        window.webkitSpeechRecognition
+      window.webkitSpeechRecognition
     )
 
   const recognitionRef = useRef(null)
@@ -504,8 +498,7 @@ function App() {
 
       textareaRef.current.style.height =
         Math.min(
-          textareaRef.current
-            .scrollHeight,
+          textareaRef.current.scrollHeight,
           160
         ) + 'px'
     }
@@ -518,8 +511,7 @@ function App() {
 
       entryTextareaRef.current.style.height =
         Math.min(
-          entryTextareaRef.current
-            .scrollHeight,
+          entryTextareaRef.current.scrollHeight,
           160
         ) + 'px'
     }
@@ -566,7 +558,6 @@ function App() {
 
       // Internal state remains "write"
       setActiveTab('write')
-
       closeSidebarOnMobile()
     }
 
@@ -812,7 +803,6 @@ function App() {
         input.trim()
 
       setInput('')
-
       setActiveTab('reflect')
 
       const conversationHistory =
@@ -1090,7 +1080,6 @@ function App() {
     <div className="min-h-screen bg-paper flex font-sans overflow-hidden text-ink">
 
       {/* MOBILE BACKDROP */}
-
       {sidebarOpen && (
         <div
           onClick={() =>
@@ -1101,7 +1090,6 @@ function App() {
       )}
 
       {/* SIDEBAR */}
-
       <aside
         className={`
           fixed inset-y-0 left-0 z-40
@@ -1123,7 +1111,6 @@ function App() {
         <div className="w-[290px] min-w-[290px] h-full flex flex-col">
 
           {/* SIDEBAR HEADER */}
-
           <div className="px-6 pt-6 pb-4">
             <div className="flex items-center">
               <div className="flex items-center gap-2">
@@ -1144,7 +1131,6 @@ function App() {
             </div>
 
             {/* VIP BADGE */}
-
             <div className="mt-4 flex items-center gap-2">
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C9A44C]/20 to-[#E7D49A]/10 border border-[#C9A44C]/30">
                 <IconSparkles className="w-3.5 h-3.5 text-[#D8B95C]" />
@@ -1157,7 +1143,6 @@ function App() {
           </div>
 
           {/* NEW REFLECTION */}
-
           <div className="px-5 pb-4">
             <button
               onClick={
@@ -1171,7 +1156,6 @@ function App() {
           </div>
 
           {/* CONVERSATIONS TITLE */}
-
           <div className="px-6 pb-2 flex items-center justify-between">
             <p className="text-[10px] uppercase tracking-[0.16em] text-paper/35 font-semibold">
               Your reflections
@@ -1183,7 +1167,6 @@ function App() {
           </div>
 
           {/* CONVERSATIONS */}
-
           <div className="flex-1 overflow-y-auto px-4 pb-4">
             {conversations.length ===
               0 && (
@@ -1289,7 +1272,6 @@ function App() {
           </div>
 
           {/* SIDEBAR FOOTER */}
-
           <div className="px-5 py-4 border-t border-paper/10">
             <div className="flex items-start gap-2.5">
               <div className="mt-0.5 w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
@@ -1305,17 +1287,14 @@ function App() {
       </aside>
 
       {/* MAIN CONTENT */}
-
       <main className="flex-1 flex flex-col h-screen min-w-0 transition-all duration-300">
 
         {/* TOP HEADER */}
-
         <header className="flex items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5 border-b border-paperLine shrink-0 bg-white/70 backdrop-blur-xl">
 
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
 
             {/* SIDEBAR TOGGLE */}
-
             <button
               onClick={
                 toggleSidebar
@@ -1338,7 +1317,6 @@ function App() {
             <div className="w-px h-6 bg-paperLine hidden sm:block" />
 
             {/* ENTRIES / REFLECT */}
-
             <div className="flex items-center bg-paperLine/50 rounded-full p-1 border border-paperLine/70">
 
               <button
@@ -1361,9 +1339,6 @@ function App() {
                 `}
               >
                 <IconPen className="w-3.5 h-3.5" />
-
-                {/* ONLY visible text changed from Write to Entries */}
-
                 Entries
               </button>
 
@@ -1389,11 +1364,11 @@ function App() {
                 <IconCompass className="w-3.5 h-3.5" />
                 Reflect
               </button>
+
             </div>
           </div>
 
           {/* ENTRY COUNT */}
-
           <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-inkSoft bg-paperLine/50 px-2.5 sm:px-3 py-1.5 rounded-full border border-paperLine/60 shrink-0">
             <IconBook className="w-3.5 h-3.5" />
 
@@ -1407,13 +1382,11 @@ function App() {
         </header>
 
         {/* PAGE */}
-
         <div className="flex-1 overflow-y-auto px-3 sm:px-5 lg:px-8 py-3 sm:py-4 lg:py-5">
 
           <div className="w-full max-w-3xl mx-auto">
 
             {/* ================= ENTRIES ================= */}
-
             {activeTab ===
               'write' && (
               <section className="bg-white/80 border border-paperLine rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden">
@@ -1438,12 +1411,13 @@ function App() {
                         Take a moment for yourself. There are no right or wrong words here.
                       </p>
                     </div>
+
                   </div>
                 </div>
 
                 {/* MOODS */}
-
                 <div className="px-5 sm:px-7 pb-3">
+
                   <p className="text-xs font-semibold text-inkSoft mb-2">
                     Pick a mood
                   </p>
@@ -1500,8 +1474,8 @@ function App() {
                 </div>
 
                 {/* ENTRY INPUT */}
-
                 <div className="px-5 sm:px-7">
+
                   <div className="relative">
 
                     <textarea
@@ -1518,11 +1492,10 @@ function App() {
                       }
                       placeholder="Write whatever is on your mind..."
                       rows={4}
-                      className="w-full resize-none bg-paper border border-paperLine rounded-2xl pl-4 pr-14 py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none focus:border-accent/60 focus:ring-4 focus:ring-accent/10 transition-all leading-relaxed min-h-[120px] max-h-[160px]"
+                      className="w-full resize-none bg-paper border border-paperLine rounded-2xl pl-4 pr-14 py-3 text-[15px] text-ink placeholder:text-inkSoft/45 focus:outline-none focus:border-accent/60 focus:ring-4 focus:ring-accent/10 transition-all leading-relaxed min-h-[140px] max-h-[160px]"
                     />
 
                     {/* MIC */}
-
                     <div className="absolute right-2.5 bottom-2.5 z-10">
                       <MicButton
                         isListening={
@@ -1539,6 +1512,7 @@ function App() {
                         className="bg-white/80 border border-paperLine/70 shadow-sm hover:bg-white"
                       />
                     </div>
+
                   </div>
 
                   {entryVoice.isListening && (
@@ -1547,10 +1521,10 @@ function App() {
                       Listening... speak naturally
                     </div>
                   )}
+
                 </div>
 
                 {/* SAVE */}
-
                 <div className="px-5 sm:px-7 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
 
                   <div className="min-h-5">
@@ -1587,10 +1561,10 @@ function App() {
                       </>
                     )}
                   </button>
+
                 </div>
 
                 {/* RECENT */}
-
                 {recentEntries.length >
                   0 && (
                   <div className="px-5 sm:px-7 pb-4 pt-1 border-t border-paperLine">
@@ -1650,11 +1624,11 @@ function App() {
                     🔒 Your reflection is your private space. MindLog is designed for reflection, not therapy.
                   </p>
                 </div>
+
               </section>
             )}
 
             {/* ================= REFLECT ================= */}
-
             {activeTab ===
               'reflect' && (
               <section className="bg-white/80 border border-paperLine rounded-2xl shadow-[0_8px_35px_rgba(35,40,33,0.05)] overflow-hidden">
@@ -1668,7 +1642,6 @@ function App() {
                 >
 
                   {/* LOADING */}
-
                   {isLoadingConvo && (
                     <div className="flex flex-col items-center justify-center text-center">
                       <div className="w-10 h-10 rounded-full border-2 border-accent/20 border-t-accent animate-spin mb-3" />
@@ -1680,7 +1653,6 @@ function App() {
                   )}
 
                   {/* EMPTY CHAT */}
-
                   {!isLoadingConvo &&
                     messages.length ===
                       0 && (
@@ -1739,11 +1711,11 @@ function App() {
                             )}
                         </div>
                       </div>
+
                     </div>
                   )}
 
                   {/* MESSAGES */}
-
                   {hasMessages &&
                     messages.map(
                       (
@@ -1793,6 +1765,7 @@ function App() {
                                 <p className="text-[9px] text-inkSoft/35 text-right mt-1 mr-1">
                                   You
                                 </p>
+
                               </div>
                             </div>
                           )
@@ -1829,7 +1802,9 @@ function App() {
                                 <p className="text-[9px] text-inkSoft/35 mt-1 ml-1">
                                   MindLog AI
                                 </p>
+
                               </div>
+
                             </div>
                           )
                         }
@@ -1839,7 +1814,6 @@ function App() {
                     )}
 
                   {/* TYPING */}
-
                   {showTypingIndicator && (
                     <div className="flex justify-start gap-2.5">
 
@@ -1854,14 +1828,15 @@ function App() {
 
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse [animation-delay:300ms]" />
                       </div>
+
                     </div>
                   )}
 
                   <div ref={chatEndRef} />
+
                 </div>
 
                 {/* CHAT INPUT */}
-
                 <div className="border-t border-paperLine p-3 sm:p-3.5 bg-paper/50">
 
                   {hasMessages && (
@@ -1886,11 +1861,11 @@ function App() {
                           </button>
                         )
                       )}
+
                     </div>
                   )}
 
                   {/* CHATBOX */}
-
                   <div className="relative flex items-end gap-1 rounded-2xl px-2 py-2 border border-accent/20 bg-gradient-to-br from-[#F9FCF8] via-[#F1F8F2] to-[#EAF5EE] shadow-[0_5px_20px_rgba(72,117,86,0.08)] focus-within:border-accent/50 focus-within:ring-4 focus-within:ring-accent/10 transition-all">
 
                     <textarea
@@ -1910,11 +1885,10 @@ function App() {
                       }
                       placeholder="Ask something about your journal..."
                       rows={1}
-                      className="flex-1 min-w-0 resize-none bg-transparent px-2.5 py-2 pr-[92px] text-sm text-ink placeholder:text-inkSoft/45 focus:outline-none max-h-[160px] leading-relaxed"
+                      className="w-full min-h-[140px] max-h-[160px] resize-none bg-transparent px-2.5 py-2 pr-[92px] text-sm text-ink placeholder:text-inkSoft/45 focus:outline-none leading-relaxed"
                     />
 
                     {/* MIC */}
-
                     <div className="absolute right-[52px] bottom-[8px] z-10">
                       <MicButton
                         isListening={
@@ -1933,7 +1907,6 @@ function App() {
                     </div>
 
                     {/* SEND BUTTON */}
-
                     <button
                       onClick={
                         handleAsk
@@ -1948,6 +1921,7 @@ function App() {
                     >
                       <IconArrowUp className="w-4 h-4" />
                     </button>
+
                   </div>
 
                   {questionVoice.isListening && (
@@ -1964,9 +1938,12 @@ function App() {
                       Answers are based on your own journal entries
                     </span>
                   </div>
+
                 </div>
+
               </section>
             )}
+
           </div>
         </div>
       </main>
